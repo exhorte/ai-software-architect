@@ -1,10 +1,14 @@
-# AI Software Architect
+# Platform Overview
+
+> **Role**: The product definition of the platform itself — what AI Software Architect is, its goals, features, scope, and success criteria. The `platform/` folder is the implementation context of the *host application* (the delivery vehicle); the agent system it hosts is specified by the sibling folders of this brain.
+> **Used**: Before any product-level decision or when onboarding to the codebase.
+> **Read by**: Claude Code and developers.
+> **Written by**: Platform architects, on scope or vision changes only.
+> **Interacts with**: `../memory/project_state.md` (build state against this vision), `architecture.md` (how the app delivers it), `../coordinator/workflow.md` (the pipeline this product exposes).
 
 ## Overview
 
 AI Software Architect (working title) is a SaaS platform that acts as a complete AI software-architecture team. A user describes a project idea in plain language; a coordinated multi-agent system analyzes the business domain, asks targeted clarification questions, extracts requirements and user stories, designs the architecture (UML, C4, ERD, security), defines the API and engineering blueprints, and delivers a roadmap, backlog, and exportable documentation bundle. Collaborators watch diagrams appear on a shared real-time canvas and refine the result together.
-
-The agent system itself (teams, coordinator, shared memory, schemas) is specified in `.claude/context/` — this file covers the product surface only.
 
 ## Target Workflow
 
@@ -27,7 +31,7 @@ Project description → business analysis → automatic clarification → requir
 - AI sidebar with chat feed, realtime task-run tracking, and spec generation/download.
 - Durable AI background tasks (Trigger.dev) writing into the shared canvas.
 
-### Agent System (target — built in phases, see `.claude/context/memory/project_state.md`)
+### Agent System (target — built in phases, see `../memory/project_state.md`)
 
 - Coordinator + Hub & Spoke multi-agent pipeline over a schema-validated Shared Memory.
 - Business Team: analyst, domain expert, requirements engineer, user-story writer.

@@ -12,7 +12,7 @@ Design the frontend as a system, not a pile of screens: information architecture
 ## Method
 
 1. Derive the screen/route map from user stories grouped by actor journey — every story's `when` lands on an identifiable screen or interaction; every screen serves at least one story.
-2. Define the component architecture: design-system primitives vs. feature components vs. page compositions, and where each lives. If the platform's own conventions apply (this product's UI), inherit root `context/ui-context.md` instead of restating it.
+2. Define the component architecture: design-system primitives vs. feature components vs. page compositions, and where each lives. If the platform's own conventions apply (this product's UI), inherit `../../platform/ui.md` instead of restating it.
 3. Choose the state model per data class: server state (fetched via `api`, cached/invalidated), session state (identity from `security.authModel`), local UI state, and — where the product is collaborative — realtime shared state, kept in separate layers with explicit boundaries.
 4. Fix API-integration patterns: typed client generated from the `api` contract, loading/error/empty states as mandatory story states, optimistic updates only where a story's acceptance criteria demand immediacy.
 5. Address the NFRs that live in the frontend: performance budgets, accessibility level, responsive strategy, i18n readiness.

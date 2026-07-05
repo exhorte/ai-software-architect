@@ -12,14 +12,16 @@ This repository is a SaaS platform where a multi-agent AI software factory (Coor
 
 ### Knowledge Base
 
-- `.claude/context/` — the system brain: coordinator specs, agent contracts, shared-memory contract, schemas, templates, rules. Structure and reading order: `CLAUDE.md` § Context Loading.
-- `context/` — application implementation context (read before implementing app code):
-  1. `context/project-overview.md` — product definition, goals, features, and scope
-  2. `context/architecture-context.md` — system structure, boundaries, storage model, and invariants
-  3. `context/ui-context.md` — theme, tokens, typography, canvas design, and component conventions
-  4. `context/code-standards.md` — implementation rules and conventions
-  5. `context/ai-workflow-rules.md` — development workflow, scoping rules, and delivery approach
+Everything lives in `.claude/context/` — structure and reading order: `CLAUDE.md` § Context Loading.
+
+- Agent system: `coordinator/`, `agents/`, `memory/`, `prompts/`, `schemas/`, `templates/`, `rules/`.
+- Application implementation context (read before implementing app code): `platform/`
+  1. `platform/overview.md` — product definition, goals, features, and scope
+  2. `platform/architecture.md` — system structure, boundaries, storage model, and invariants
+  3. `platform/ui.md` — theme, tokens, typography, canvas design, and component conventions
+  4. `platform/code_standards.md` — implementation rules and conventions
+  5. `platform/dev_workflow.md` — development workflow, scoping rules, and delivery approach
 
 ### State Tracking
 
-Update `.claude/context/memory/project_state.md` after each meaningful implementation change (it supersedes the archived `context/progress-tracker.md`). If implementation changes the architecture, scope, or standards documented in the context files, update the relevant file before continuing.
+Update `.claude/context/memory/project_state.md` (durable build state) and `.claude/context/memory/handoff.md` (live session flow) after each meaningful implementation change. If implementation changes the architecture, scope, or standards documented in the context files, update the relevant file before continuing.

@@ -4,12 +4,12 @@
 > **Used**: Layer 2 of prompts for agents that emit code (backend/frontend architects, future code generators); by Claude Code when writing platform code.
 > **Read by**: Engineering agents, code-generation workflows, Claude Code.
 > **Written by**: Platform architects.
-> **Interacts with**: Root `context/code-standards.md` (platform-specific standards), `output_formats.md` (code-block formatting), `../rules/naming.md` (identifier conventions).
+> **Interacts with**: `../platform/code_standards.md` (platform-specific standards), `output_formats.md` (code-block formatting), `../rules/naming.md` (identifier conventions).
 
 ## Scope Split
 
 - **Generated code for user projects** (agents' output) → rules below, applied in the user project's chosen stack.
-- **The platform's own codebase** (Claude Code working on this repo) → root `context/code-standards.md` is authoritative (TypeScript strict, RSC-first Next.js, token-based styling, thin route handlers, background tasks for long work). This file does not duplicate it.
+- **The platform's own codebase** (Claude Code working on this repo) → `../platform/code_standards.md` is authoritative (TypeScript strict, RSC-first Next.js, token-based styling, thin route handlers, background tasks for long work). This file does not duplicate it.
 
 ## Rules for Generated Code
 

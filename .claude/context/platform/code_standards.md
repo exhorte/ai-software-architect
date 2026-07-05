@@ -1,11 +1,17 @@
-# Code Standards
+# Platform Code Standards
+
+> **Role**: Implementation rules for the platform's own codebase. Authoritative for all app code; `../prompts/coding_rules.md` governs code the *agents* generate for user projects and defers to this file for platform work.
+> **Used**: While writing or reviewing any application code.
+> **Read by**: Claude Code and developers.
+> **Written by**: Platform architects when conventions evolve (update *before* merging code that departs from them).
+> **Interacts with**: `architecture.md` (the boundaries these rules protect), `ui.md` (token-based styling), `dev_workflow.md` (how changes are scoped and verified).
 
 ## General
 
 - Keep modules small and single-purpose.
 - Fix root causes — do not layer workarounds.
 - Do not mix unrelated concerns in one component or route.
-- Respect the system boundaries defined in `architecture-context.md`.
+- Respect the system boundaries defined in `architecture.md`.
 
 ## TypeScript
 
@@ -20,6 +26,7 @@
 - Add `"use client"` only when the component needs browser interactivity, hooks, or real-time state.
 - Keep route handlers focused on a single responsibility.
 - Long-running work belongs in background tasks, not in request handlers.
+- Next.js 16 has breaking changes (e.g. `proxy.ts` replaces `middleware.ts`) — check `node_modules/next/dist/docs/` before framework-touching code.
 
 ## Styling
 
@@ -37,9 +44,10 @@
 ## Data and Storage
 
 - Project metadata and relationships belong in PostgreSQL via Prisma.
-- Canvas snapshots and generated specs belong in Vercel Blob; Prisma stores only the blob URL reference.
+- Canvas snapshots and generated artifacts belong in Vercel Blob; Prisma stores only the blob URL reference.
 - Do not store large generated content directly in the database.
 - Task run records are first-class relational data — treat ownership and run IDs as verified before any token issuance.
+- Prisma 7: generated client lives in `app/generated/prisma/`; the constructor requires `{ adapter }` (`@prisma/adapter-pg`).
 
 ## File Organization
 

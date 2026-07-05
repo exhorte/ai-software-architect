@@ -89,8 +89,8 @@ npx trigger.dev@latest dev
 
 ```text
 .
-├── .claude/context/      # The brain: coordinator, agents, memory, schemas, rules
-├── context/              # Host-app implementation context (architecture, UI, standards)
+├── .claude/context/      # The brain: coordinator, agents, memory, schemas, rules,
+│                         # and platform/ (host-app implementation context)
 ├── app/                  # Next.js routes: pages + API (auth, projects, AI, specs)
 ├── components/           # UI (editor, canvas) + shadcn primitives (ui/ — do not modify)
 ├── hooks/                # Client hooks (autosave, shortcuts, project actions)

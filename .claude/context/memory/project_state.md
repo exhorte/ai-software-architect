@@ -5,7 +5,7 @@
 > **Read by**: Claude Code (as Coordinator of platform development) and human developers.
 > **Written by**: Claude Code / developers at the end of each unit of work. This is the only file in `memory/` that tracks *our* build, not a user's project.
 > **Format**: Markdown with fixed sections below. Keep entries dated and condensed — one line per completed unit; details belong in git history.
-> **Interacts with**: Root `context/` files (app implementation context), `../coordinator/workflow.md` (target behavior being built).
+> **Interacts with**: `../platform/` (app implementation context), `../coordinator/workflow.md` (target behavior being built).
 
 ## Product
 
@@ -30,7 +30,7 @@ Built on the Ghost AI foundation (Next.js 16, Clerk, Prisma/PostgreSQL, Livebloc
 
 ## Inherited Foundation (Ghost AI, features 01–29 — all complete)
 
-Auth (Clerk), project CRUD + collaborators, real-time canvas (Liveblocks + React Flow: shapes, colors, resize, edges, presence, cursors, undo/redo, templates, autosave to Vercel Blob), AI design agent (Gemini tool-calling → canvas mutations via Liveblocks Node SDK), AI spec generator (canvas + chat → Markdown spec → Blob + Prisma record, download API), AI sidebar with realtime run tracking (Trigger.dev react-hooks). Detailed history: `context/progress-tracker.md` (archived).
+Auth (Clerk), project CRUD + collaborators, real-time canvas (Liveblocks + React Flow: shapes, colors, resize, edges, presence, cursors, undo/redo, templates, autosave to Vercel Blob), AI design agent (Gemini tool-calling → canvas mutations via Liveblocks Node SDK), AI spec generator (canvas + chat → Markdown spec → Blob + Prisma record, download API), AI sidebar with realtime run tracking (Trigger.dev react-hooks). Detailed feature-by-feature history: `git show 4a0365d:context/progress-tracker.md`.
 
 ## Decisions Log
 
@@ -41,6 +41,7 @@ Auth (Clerk), project CRUD + collaborators, real-time canvas (Liveblocks + React
 - 2026-07-05 — Git initialized (repo had none); safety snapshot `4a0365d` taken, then user-approved cleanup: removed `context/feature-specs/`, `context/screenshots/`, `docs/superpowers/`, `public/readme/`, `public/thumbnails/`; README rewritten for the new product (`17ef040`). Deleted content remains recoverable from the snapshot commit.
 - 2026-07-05 — `memory/handoff.md` added as the live session-handoff journal (French, always loaded per `CLAUDE.md` § Context Loading); durable state stays here, session flow lives there.
 - 2026-07-05 — `.claude/settings.json` allowlist (lint, build, `tsc --noEmit`, `prisma validate/format`) approved explicitly by the user.
+- 2026-07-05 — **Supersedes the "root `context/` remains" decision above**: all knowledge consolidated into `.claude/context/`. Root `context/` absorbed as `platform/` (overview, architecture, ui, code_standards, dev_workflow); `progress-tracker.md` deleted (recoverable at `4a0365d`); `docs/vendor/trigger-v4-rules.md` deleted (redundant with `.agents/skills/trigger-*`). Root `context/` and `docs/` removed.
 
 ## In Progress
 

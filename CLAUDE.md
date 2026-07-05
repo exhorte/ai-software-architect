@@ -2,7 +2,7 @@
 
 This repository is a SaaS platform (working title: **AI Software Architect**) where a multi-agent AI software factory turns a project idea into a complete engineering deliverable: requirements, user stories, architecture, UML/C4/ERD diagrams, database schema, stack choice, roadmap, backlog, and exports. It is built on the Ghost AI foundation: Next.js 16, Clerk, Prisma/PostgreSQL, Liveblocks + React Flow canvas, Trigger.dev, Vercel Blob.
 
-This file stays light on purpose. The knowledge lives in `.claude/context/` (the **brain**) and `context/` (the **application implementation context**). Agent prompts never belong here.
+This file stays light on purpose. All knowledge lives in `.claude/context/` (the **brain**): the agent system in `coordinator/`, `agents/`, `memory/`, `prompts/`, `schemas/`, `templates/`, `rules/`, and the host application's implementation context in `platform/`. Agent prompts never belong here.
 
 ## Philosophy
 
@@ -28,16 +28,16 @@ Load in this order, and only what the task needs (details: `.claude/context/memo
    - Agent behavior → the specific `.claude/context/agents/<team>/<agent>.md` + `.claude/context/prompts/`
    - Data contracts → `.claude/context/schemas/` + `.claude/context/memory/shared_memory.md`
    - Naming / validation / coherence questions → `.claude/context/rules/`
-   - Application code (UI, APIs, tasks, DB) → `context/architecture-context.md`, `context/ui-context.md`, `context/code-standards.md`, `context/ai-workflow-rules.md`
+   - Application code (UI, APIs, tasks, DB) → `.claude/context/platform/` (`architecture.md`, `ui.md`, `code_standards.md`, `dev_workflow.md`; product vision: `overview.md`)
 4. Vocabulary doubts → `.claude/context/memory/glossary.md`.
 
 ## Global Rules
 
 - Update `.claude/context/memory/project_state.md` after each meaningful implementation change; if a change alters architecture, scope, or standards, update the relevant context file *before* continuing.
-- Work in small verifiable increments (scoping rules: `context/ai-workflow-rules.md`); never combine unrelated system boundaries in one step.
+- Work in small verifiable increments (scoping rules: `.claude/context/platform/dev_workflow.md`); never combine unrelated system boundaries in one step.
 - Respect established grammar: IDs per `.claude/context/rules/naming.md`, structures per `.claude/context/schemas/`, terms per the glossary.
 - Do not modify `components/ui/*` (shadcn) or third-party internals unless a task explicitly requires it.
-- Next.js 16 has breaking changes — check `node_modules/next/dist/docs/` before writing framework-touching code. Trigger.dev v4 reference: `.claude/skills/trigger-*` and `docs/vendor/trigger-v4-rules.md`.
+- Next.js 16 has breaking changes — check `node_modules/next/dist/docs/` before writing framework-touching code. Trigger.dev v4 reference: the `.claude/skills/trigger-*` skills (full content in `.agents/skills/trigger-*`).
 
 ## The Coordinator Role
 

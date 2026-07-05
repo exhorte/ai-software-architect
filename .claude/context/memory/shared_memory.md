@@ -34,7 +34,7 @@ Top-level sections of the memory document (authoritative definition: `../schemas
 
 Every section carries a status the Orchestrator maintains:
 
-```
+```text
 missing → draft → valid → (stale | blocked)
 ```
 
@@ -55,7 +55,7 @@ Downstream agents may only consume sections that are `valid` (or `draft` within 
 
 ## Persistence Mapping (platform runtime)
 
-When implemented in the product, memory persists through the existing storage layers (see root `context/architecture-context.md`):
+When implemented in the product, memory persists through the existing storage layers (see `../platform/architecture.md`):
 
 - Document + section statuses → PostgreSQL via Prisma (one memory document per project, versioned).
 - Large rendered artifacts (exports, generated docs) → Vercel Blob, referenced by URL from `documentation.exports`.

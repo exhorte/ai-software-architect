@@ -1,6 +1,10 @@
-# Architecture Context
+# Platform Architecture
 
-This file describes the host application: boundaries, storage, and invariants. The multi-agent system that runs *on top of* this application (Coordinator, teams, Shared Memory, schemas) is specified in `.claude/context/` — when the two views meet (e.g. where Shared Memory persists), this file names the storage layer and `.claude/context/memory/shared_memory.md` owns the contract.
+> **Role**: The host application's structure: stack, system boundaries, storage model, auth model, and invariants. When this view meets the agent system (e.g. where Shared Memory persists), this file names the storage layer and `../memory/shared_memory.md` owns the contract.
+> **Used**: Before implementing or changing any application code (UI, APIs, tasks, DB).
+> **Read by**: Claude Code and developers.
+> **Written by**: Platform architects, whenever boundaries, storage, or invariants change (update *before* continuing implementation).
+> **Interacts with**: `code_standards.md` (rules within these boundaries), `../memory/shared_memory.md` (persistence mapping), `../coordinator/workflow.md` (the pipeline the runtime must execute).
 
 ## Stack
 
@@ -17,11 +21,10 @@ This file describes the host application: boundaries, storage, and invariants. T
 ## System Boundaries
 
 - `app/api` — Authenticated request handlers: input validation, ownership checks, task triggering, and persistence.
-- `trigger` — Long-running background jobs: AI design generation and spec generation.
+- `trigger` — Long-running background jobs: AI design generation and spec generation (future: orchestrator + agent tasks).
 - `lib` — Shared infrastructure: Prisma client, access control helpers, and utilities.
 - `components` — UI composition: canvas surfaces, sidebars, dialogs, and interactive elements.
 - `prisma` — Database schema and generated client output.
-- `data` — Legacy local directory. Not used for new artifacts.
 
 ## Storage Model
 
@@ -29,7 +32,7 @@ This file describes the host application: boundaries, storage, and invariants. T
 - **Vercel Blob**: generated artifacts — canvas snapshots at `canvas/{projectId}.json` and specs at `specs/{projectId}/{specId}.md`.
 - Project records, spec records, and task run records belong in PostgreSQL.
 - Canvas content and Markdown output are stored in and retrieved from Vercel Blob.
-- The blob URL is stored in the database (`canvasJsonPath`, `filePath`) as the reference to the artifact.
+- The blob URL is stored in the database (`canvasBlobUrl`, `filePath`) as the reference to the artifact.
 
 ## Auth and Collaboration Model
 
@@ -49,7 +52,7 @@ This file describes the host application: boundaries, storage, and invariants. T
 
 ## AI Generation Model
 
-The current single-task generators below are the Phase-0 foundation. They will be progressively decomposed into the orchestrated multi-agent pipeline defined in `.claude/context/coordinator/workflow.md` (orchestrator task + agent child tasks over Shared Memory), reusing the same Trigger.dev + Liveblocks + Blob mechanics.
+The current single-task generators below are the Phase-0 foundation. They will be progressively decomposed into the orchestrated multi-agent pipeline defined in `../coordinator/workflow.md` (orchestrator task + agent child tasks over Shared Memory), reusing the same Trigger.dev + Liveblocks + Blob mechanics.
 
 ### Design Generation
 
@@ -61,7 +64,7 @@ The current single-task generators below are the Phase-0 foundation. They will b
 
 - Input: current canvas graph and project context.
 - Execution: durable background task via Trigger.dev.
-- Output: Markdown technical spec saved to the filesystem and linked to the project in the database.
+- Output: Markdown technical spec saved to Vercel Blob and linked to the project in the database.
 
 ## Invariants
 

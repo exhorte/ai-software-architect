@@ -1,4 +1,10 @@
-# UI Context
+# Platform UI
+
+> **Role**: The visual language of the host application: theme tokens, typography, radius scale, canvas conventions, component library, and layout patterns.
+> **Used**: Before implementing or changing any UI.
+> **Read by**: Claude Code and developers; `engineering/frontend_architect` inherits these conventions when designing *this* platform's own surfaces.
+> **Written by**: Platform architects on design-system changes.
+> **Interacts with**: `code_standards.md` (styling rules that enforce these tokens), `../prompts/output_formats.md` (the canvas color/shape semantics build on the node palette defined here).
 
 ## Theme
 
@@ -51,7 +57,7 @@ Radius increases with surface depth — smaller for inner elements, larger for o
 
 ### Node Color Palette
 
-8 defined color pairs. Each pair specifies a dark node fill and a vivid contrasting text color tuned for readability on the dark canvas. Defined in `types/canvas.ts` as `NODE_COLORS`.
+8 defined color pairs. Each pair specifies a dark node fill and a vivid contrasting text color tuned for readability on the dark canvas. Defined in `types/canvas.ts` as `NODE_COLORS`. The *semantic* mapping of these colors for generated diagrams (blue = services, teal = storage, …) is defined once in `../prompts/output_formats.md`.
 
 | Node fill | Text color | Character              |
 | --------- | ---------- | ---------------------- |

@@ -16,7 +16,7 @@ Loading order when working on the platform:
    - Orchestration work → `coordinator/*`
    - Agent behavior work → the specific `agents/<team>/<agent>.md` + `prompts/*`
    - Data model work → `schemas/*` + `shared_memory.md`
-   - App/UI work → root `context/` (architecture, UI, code standards)
+   - App/UI work → `../platform/` (architecture, UI, code standards, dev workflow)
 4. Never bulk-load the whole `agents/` tree; agent files are independent by design.
 
 Session end: update `project_state.md` if anything meaningful changed.
