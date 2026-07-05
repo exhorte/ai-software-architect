@@ -37,6 +37,7 @@ Auth (Clerk), project CRUD + collaborators, real-time canvas (Liveblocks + React
 - 2026-07-05 — Agent definition files are the *source of truth for runtime prompts*: the future orchestrator loads/compiles them, so design-time docs and runtime behavior cannot drift.
 - 2026-07-05 — Inter-agent exchanges are schema-validated JSON only (`schemas/`); the existing free-text spec generator will be decomposed into Documentation Team agents in Phase 5.
 - 2026-07-05 — Existing `design-agent` canvas conventions (shapes, color semantics, layout) promoted to system-wide diagram projection rules in `../prompts/output_formats.md`.
+- 2026-07-05 — Git initialized (repo had none); safety snapshot `4a0365d` taken, then user-approved cleanup: removed `context/feature-specs/`, `context/screenshots/`, `docs/superpowers/`, `public/readme/`, `public/thumbnails/`; README rewritten for the new product. Deleted content remains recoverable from the snapshot commit.
 
 ## In Progress
 

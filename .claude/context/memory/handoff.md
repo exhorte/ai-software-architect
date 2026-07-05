@@ -21,6 +21,8 @@
 3. `CLAUDE.md` racine réécrit en point d'entrée léger ; `AGENTS.md` aligné ; docs Trigger.dev déplacées vers `docs/vendor/trigger-v4-rules.md`.
 4. `context/` racine mis à jour : `project-overview.md` réécrit pour la nouvelle vision, `progress-tracker.md` archivé (remplacé par `project_state.md`), liens corrigés.
 5. `.claude/settings.json` : allowlist ajoutée (lint, build, tsc --noEmit, prisma validate/format) — validée explicitement par l'utilisateur.
+6. **Git initialisé** (le dossier n'était pas un dépôt) ; commit de sauvegarde `4a0365d` pris avant nettoyage.
+7. **Nettoyage validé par l'utilisateur** : supprimés `context/feature-specs/` (29 specs historiques), `context/screenshots/`, `docs/superpowers/`, `public/readme/` + `public/thumbnails/` (assets marketing JSM). README réécrit pour le produit AI Software Architect.
 
 ## En vol / non terminé
 
@@ -39,9 +41,9 @@
 
 ## Questions ouvertes pour l'utilisateur
 
-- Nom définitif du produit (placeholder : **AI Software Architect**).
-- README racine encore au format tutoriel JSM — à réécrire quand ? (proposé : après Phase 1)
+- Nom définitif du produit (placeholder : **AI Software Architect**) — le `package.json` s'appelle encore `ghost-ai`, à renommer en même temps.
 - Formats d'export au-delà du bundle Markdown (PDF ? OpenAPI ?) — à trancher avant Phase 5.
+- Créer un dépôt distant (GitHub) pour pousser l'historique git local ?
 
 ## Pièges connus
 
