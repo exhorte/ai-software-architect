@@ -12,6 +12,8 @@ This file stays light on purpose. All knowledge lives in `.claude/context/` (the
 4. **Reuse before rebuild.** The existing canvas, realtime collaboration, auth, background-task, and storage layers are the delivery vehicle for the agent system — extend them, don't replace them.
 5. **Long-term over short-term.** Simplicity is chosen deliberately (paid for by a requirement), decisions are recorded as ADRs, and one section has exactly one owner.
 
+The full charter behind these principles: `.claude/context/project/development_manifesto.md`.
+
 ## The Two Planes
 
 - **Design-time (you, Claude Code)**: when developing this platform, you act as the Coordinator of the work — plan, keep scope small, respect the context files, update state after each unit.
