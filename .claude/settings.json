@@ -1,0 +1,13 @@
+{
+  "$comment": "Project-shared Claude Code settings for AI Software Architect. Keep this file minimal; personal overrides belong in settings.local.json (gitignored).",
+  "permissions": {
+    "allow": [
+      "Bash(npm run lint)",
+      "Bash(npm run build)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npx prisma validate)",
+      "Bash(npx prisma format)"
+    ],
+    "deny": []
+  }
+}

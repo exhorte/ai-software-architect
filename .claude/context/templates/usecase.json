@@ -1,0 +1,39 @@
+{
+  "$comment": "Canonical use case diagram instance conforming to schemas/uml.schema.json. Actors project as circles, use cases as pills, the system boundary as a hexagon grouping. include/extend relations shown.",
+  "id": "UML-usecase-selling",
+  "type": "usecase",
+  "title": "Selling — Use Cases",
+  "scope": "EPIC-03 (Product publishing) + EPIC-04 (Order management)",
+  "sources": ["ACT-Seller", "ACT-Buyer", "US-014", "US-021"],
+  "elements": [
+    { "id": "act-seller", "kind": "actor", "name": "Seller", "memoryRef": "ACT-Seller" },
+    { "id": "act-buyer", "kind": "actor", "name": "Buyer", "memoryRef": "ACT-Buyer" },
+    { "id": "system-boundary", "kind": "boundary", "name": "Marketplace" },
+    { "id": "uc-publish-product", "kind": "usecase", "name": "Publish product listing", "memoryRef": "US-014" },
+    { "id": "uc-validate-listing", "kind": "usecase", "name": "Validate listing completeness" },
+    { "id": "uc-place-order", "kind": "usecase", "name": "Place order", "memoryRef": "US-021" },
+    { "id": "uc-apply-promo", "kind": "usecase", "name": "Apply promo code" }
+  ],
+  "relations": [
+    { "id": "edge-seller-publish", "from": "act-seller", "to": "uc-publish-product", "kind": "association" },
+    { "id": "edge-publish-validate", "from": "uc-publish-product", "to": "uc-validate-listing", "kind": "include", "label": "«include»" },
+    { "id": "edge-buyer-order", "from": "act-buyer", "to": "uc-place-order", "kind": "association" },
+    { "id": "edge-promo-order", "from": "uc-apply-promo", "to": "uc-place-order", "kind": "extend", "label": "«extend»" }
+  ],
+  "canvasProjection": {
+    "nodes": [
+      { "id": "act-seller", "label": "Seller", "shape": "circle", "colorIndex": 5, "x": 100, "y": 80, "width": 100, "height": 100 },
+      { "id": "act-buyer", "label": "Buyer", "shape": "circle", "colorIndex": 5, "x": 100, "y": 280, "width": 100, "height": 100 },
+      { "id": "uc-publish-product", "label": "Publish product listing", "shape": "pill", "colorIndex": 1, "x": 380, "y": 80, "width": 200, "height": 70 },
+      { "id": "uc-validate-listing", "label": "Validate listing completeness", "shape": "pill", "colorIndex": 0, "x": 660, "y": 80, "width": 200, "height": 70 },
+      { "id": "uc-place-order", "label": "Place order", "shape": "pill", "colorIndex": 1, "x": 380, "y": 280, "width": 200, "height": 70 },
+      { "id": "uc-apply-promo", "label": "Apply promo code", "shape": "pill", "colorIndex": 0, "x": 660, "y": 280, "width": 200, "height": 70 }
+    ],
+    "edges": [
+      { "id": "edge-seller-publish", "source": "act-seller", "target": "uc-publish-product", "label": "" },
+      { "id": "edge-publish-validate", "source": "uc-publish-product", "target": "uc-validate-listing", "label": "«include»" },
+      { "id": "edge-buyer-order", "source": "act-buyer", "target": "uc-place-order", "label": "" },
+      { "id": "edge-promo-order", "source": "uc-apply-promo", "target": "uc-place-order", "label": "«extend»" }
+    ]
+  }
+}

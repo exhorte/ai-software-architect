@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-software-architect.dev/schemas/uml.schema.json",
+  "title": "UML Diagram Document",
+  "description": "One structured UML diagram. Single source for canvas and Mermaid projections (prompts/output_formats.md). Canonical examples: templates/class_diagram.json, templates/sequence.json, templates/usecase.json.",
+  "type": "object",
+  "required": ["id", "type", "title", "elements", "relations"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^UML-(class|seq|usecase|activity|deploy)-[a-z0-9-]+$" },
+    "type": { "enum": ["class", "sequence", "usecase", "activity", "deployment"] },
+    "title": { "type": "string" },
+    "scope": { "type": "string", "description": "Bounded context or story/flow this diagram covers" },
+    "sources": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Memory IDs this diagram is derived from (ENT-*, US-*, CMP-*, ACT-*)"
+    },
+    "elements": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 15,
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "name"],
+        "properties": {
+          "id": { "type": "string", "description": "kebab-case; equals the projected memory ID when one exists (ENT-Order → ent-order)" },
+          "kind": {
+            "enum": ["class", "interface", "enum", "actor", "usecase", "participant", "boundary", "activity", "decision", "startEnd", "node", "artifact"]
+          },
+          "name": { "type": "string" },
+          "memoryRef": { "type": "string", "description": "ENT-*, ACT-*, CMP-*, US-* this element projects" },
+          "members": {
+            "type": "array",
+            "description": "Class attributes/operations; usecase steps; participant notes",
+            "items": { "type": "object", "required": ["name"], "properties": { "name": { "type": "string" }, "type": { "type": "string" }, "visibility": { "enum": ["public", "private", "protected"] }, "kind": { "enum": ["attribute", "operation"] } } }
+          },
+          "stereotype": { "type": "string" }
+        }
+      }
+    },
+    "relations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "from", "to", "kind"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^edge-[a-z0-9-]+$" },
+          "from": { "type": "string" },
+          "to": { "type": "string" },
+          "kind": {
+            "enum": ["association", "composition", "aggregation", "inheritance", "realization", "dependency", "include", "extend", "message", "returnMessage", "asyncMessage", "flow"]
+          },
+          "label": { "type": "string" },
+          "order": { "type": "integer", "description": "Sequence diagrams: message order, 1-based" },
+          "cardinalityFrom": { "type": "string" },
+          "cardinalityTo": { "type": "string" },
+          "isFailurePath": { "type": "boolean" }
+        }
+      }
+    },
+    "fragments": {
+      "type": "array",
+      "description": "Sequence diagrams only: alt/opt/loop fragments grouping message orders",
+      "items": { "type": "object", "required": ["kind", "covers"], "properties": { "kind": { "enum": ["alt", "opt", "loop", "par"] }, "condition": { "type": "string" }, "covers": { "type": "array", "items": { "type": "integer" } } } }
+    },
+    "canvasProjection": {
+      "type": "object",
+      "description": "React Flow projection per prompts/output_formats.md",
+      "properties": {
+        "nodes": { "type": "array", "items": { "type": "object", "required": ["id", "shape", "colorIndex", "x", "y"], "properties": { "id": { "type": "string" }, "label": { "type": "string" }, "shape": { "enum": ["rectangle", "diamond", "circle", "pill", "cylinder", "hexagon"] }, "colorIndex": { "type": "integer", "minimum": 0, "maximum": 7 }, "x": { "type": "number" }, "y": { "type": "number" }, "width": { "type": "number" }, "height": { "type": "number" } } } },
+        "edges": { "type": "array", "items": { "type": "object", "required": ["id", "source", "target"], "properties": { "id": { "type": "string" }, "source": { "type": "string" }, "target": { "type": "string" }, "label": { "type": "string" } } } }
+      }
+    }
+  }
+}

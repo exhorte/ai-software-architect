@@ -1,0 +1,38 @@
+{
+  "$comment": "Canonical deployment diagram instance conforming to schemas/uml.schema.json. Owned by engineering/devops (rendered from engineering.devops.topology, not authored by uml_architect). Nodes = execution targets, artifacts = deployed C4 containers.",
+  "id": "UML-deploy-production",
+  "type": "deployment",
+  "title": "Production Deployment Topology",
+  "scope": "engineering.devops.topology — production environment",
+  "sources": ["C4-web-app", "C4-api", "C4-db", "C4-jobs"],
+  "elements": [
+    { "id": "node-edge-platform", "kind": "node", "name": "Edge Platform (managed)", "stereotype": "PaaS" },
+    { "id": "node-task-runner", "kind": "node", "name": "Background Task Runner (managed)", "stereotype": "PaaS" },
+    { "id": "node-db-service", "kind": "node", "name": "Managed PostgreSQL", "stereotype": "DBaaS" },
+    { "id": "artifact-web-app", "kind": "artifact", "name": "Web App", "memoryRef": "C4-web-app" },
+    { "id": "artifact-api", "kind": "artifact", "name": "API", "memoryRef": "C4-api" },
+    { "id": "artifact-jobs", "kind": "artifact", "name": "AI/Job Workers", "memoryRef": "C4-jobs" }
+  ],
+  "relations": [
+    { "id": "edge-webapp-on-edge", "from": "artifact-web-app", "to": "node-edge-platform", "kind": "dependency", "label": "deployed on" },
+    { "id": "edge-api-on-edge", "from": "artifact-api", "to": "node-edge-platform", "kind": "dependency", "label": "deployed on" },
+    { "id": "edge-jobs-on-runner", "from": "artifact-jobs", "to": "node-task-runner", "kind": "dependency", "label": "deployed on" },
+    { "id": "edge-api-db", "from": "artifact-api", "to": "node-db-service", "kind": "association", "label": "TCP/TLS" },
+    { "id": "edge-jobs-db", "from": "artifact-jobs", "to": "node-db-service", "kind": "association", "label": "TCP/TLS" }
+  ],
+  "canvasProjection": {
+    "nodes": [
+      { "id": "node-edge-platform", "label": "Edge Platform", "shape": "hexagon", "colorIndex": 6, "x": 100, "y": 80, "width": 220, "height": 90 },
+      { "id": "artifact-web-app", "label": "Web App", "shape": "rectangle", "colorIndex": 5, "x": 380, "y": 80, "width": 180, "height": 80 },
+      { "id": "artifact-api", "label": "API", "shape": "rectangle", "colorIndex": 1, "x": 640, "y": 80, "width": 180, "height": 80 },
+      { "id": "node-task-runner", "label": "Task Runner", "shape": "hexagon", "colorIndex": 3, "x": 100, "y": 280, "width": 220, "height": 90 },
+      { "id": "artifact-jobs", "label": "AI/Job Workers", "shape": "pill", "colorIndex": 3, "x": 380, "y": 280, "width": 180, "height": 80 },
+      { "id": "node-db-service", "label": "Managed PostgreSQL", "shape": "cylinder", "colorIndex": 7, "x": 640, "y": 280, "width": 180, "height": 100 }
+    ],
+    "edges": [
+      { "id": "edge-api-db", "source": "artifact-api", "target": "node-db-service", "label": "TCP/TLS" },
+      { "id": "edge-jobs-db", "source": "artifact-jobs", "target": "node-db-service", "label": "TCP/TLS" },
+      { "id": "edge-webapp-api", "source": "artifact-web-app", "target": "artifact-api", "label": "HTTPS" }
+    ]
+  }
+}

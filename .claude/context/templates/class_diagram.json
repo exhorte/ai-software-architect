@@ -1,0 +1,69 @@
+{
+  "$comment": "Canonical class diagram instance conforming to schemas/uml.schema.json. Reference for uml_architect output; running example: minimal e-commerce Fulfillment context. Element IDs are the kebab-cased memory IDs they project.",
+  "id": "UML-class-fulfillment",
+  "type": "class",
+  "title": "Fulfillment Domain Model",
+  "scope": "Fulfillment bounded context",
+  "sources": ["ENT-Order", "ENT-OrderLine", "ENT-Customer", "BR-007"],
+  "elements": [
+    {
+      "id": "ent-order",
+      "kind": "class",
+      "name": "Order",
+      "memoryRef": "ENT-Order",
+      "stereotype": "aggregate root",
+      "members": [
+        { "name": "status", "type": "OrderStatus", "visibility": "private", "kind": "attribute" },
+        { "name": "placedAt", "type": "datetime", "visibility": "private", "kind": "attribute" },
+        { "name": "place()", "visibility": "public", "kind": "operation" },
+        { "name": "ship()", "visibility": "public", "kind": "operation" }
+      ]
+    },
+    {
+      "id": "ent-order-line",
+      "kind": "class",
+      "name": "OrderLine",
+      "memoryRef": "ENT-OrderLine",
+      "members": [
+        { "name": "quantity", "type": "number", "visibility": "private", "kind": "attribute" },
+        { "name": "unitPrice", "type": "money", "visibility": "private", "kind": "attribute" }
+      ]
+    },
+    {
+      "id": "ent-customer",
+      "kind": "class",
+      "name": "Customer",
+      "memoryRef": "ENT-Customer",
+      "stereotype": "aggregate root",
+      "members": [{ "name": "email", "type": "text", "visibility": "private", "kind": "attribute" }]
+    },
+    {
+      "id": "order-status",
+      "kind": "enum",
+      "name": "OrderStatus",
+      "members": [
+        { "name": "draft", "kind": "attribute" },
+        { "name": "placed", "kind": "attribute" },
+        { "name": "shipped", "kind": "attribute" }
+      ]
+    }
+  ],
+  "relations": [
+    { "id": "edge-order-orderline", "from": "ent-order", "to": "ent-order-line", "kind": "composition", "cardinalityFrom": "1", "cardinalityTo": "1..*" },
+    { "id": "edge-order-customer", "from": "ent-order", "to": "ent-customer", "kind": "association", "label": "placed by (by ID — crosses aggregate boundary)", "cardinalityFrom": "*", "cardinalityTo": "1" },
+    { "id": "edge-order-orderstatus", "from": "ent-order", "to": "order-status", "kind": "dependency" }
+  ],
+  "canvasProjection": {
+    "nodes": [
+      { "id": "ent-order", "label": "Order", "shape": "rectangle", "colorIndex": 1, "x": 100, "y": 80, "width": 180, "height": 120 },
+      { "id": "ent-order-line", "label": "OrderLine", "shape": "rectangle", "colorIndex": 1, "x": 380, "y": 80, "width": 180, "height": 100 },
+      { "id": "ent-customer", "label": "Customer", "shape": "rectangle", "colorIndex": 5, "x": 100, "y": 280, "width": 180, "height": 100 },
+      { "id": "order-status", "label": "«enum» OrderStatus", "shape": "pill", "colorIndex": 0, "x": 380, "y": 280, "width": 180, "height": 80 }
+    ],
+    "edges": [
+      { "id": "edge-order-orderline", "source": "ent-order", "target": "ent-order-line", "label": "1..*" },
+      { "id": "edge-order-customer", "source": "ent-order", "target": "ent-customer", "label": "placed by" },
+      { "id": "edge-order-orderstatus", "source": "ent-order", "target": "order-status", "label": "" }
+    ]
+  }
+}

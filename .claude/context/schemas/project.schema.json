@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-software-architect.dev/schemas/project.schema.json",
+  "title": "Project Shared Memory",
+  "description": "Root schema of the Shared Memory document — one per user project. Section ownership: coordinator/routing_rules.md. Lifecycle statuses: memory/shared_memory.md. Architecture, UML and database sections delegate to their dedicated schemas.",
+  "type": "object",
+  "required": ["memoryVersion", "project", "runState"],
+  "properties": {
+    "memoryVersion": { "type": "integer", "minimum": 1 },
+    "project": {
+      "type": "object",
+      "required": ["name", "description", "goals", "scope"],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "goals": { "type": "array", "items": { "type": "object", "required": ["id", "statement"], "properties": { "id": { "type": "string", "pattern": "^GOAL-[0-9]{2,}$" }, "statement": { "type": "string" }, "measure": { "type": "string" } } } },
+        "scope": {
+          "type": "object",
+          "required": ["in", "out"],
+          "properties": { "in": { "type": "array", "items": { "type": "string" } }, "out": { "type": "array", "items": { "type": "string" } } }
+        },
+        "constraints": { "type": "array", "items": { "type": "object", "required": ["kind", "statement"], "properties": { "kind": { "enum": ["technology", "regulatory", "budget", "time", "integration", "other"] }, "statement": { "type": "string" } } } },
+        "assumptions": { "type": "array", "items": { "type": "object", "required": ["id", "statement", "source"], "properties": { "id": { "type": "string", "pattern": "^ASM-[0-9]{3,}$" }, "statement": { "type": "string" }, "source": { "enum": ["inferred", "unansweredClarification", "default"] }, "fromClarification": { "type": "string" } } } }
+      }
+    },
+    "clarifications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "question", "why", "blocking"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^CLR-[0-9]{3,}$" },
+          "question": { "type": "string" },
+          "why": { "type": "string" },
+          "blocking": { "type": "boolean" },
+          "suggestedDefault": { "type": ["string", "null"] },
+          "answer": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "actors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "kind", "goals"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^ACT-[A-Za-z][A-Za-z0-9]*$" },
+          "name": { "type": "string" },
+          "kind": { "enum": ["human", "system"] },
+          "role": { "enum": ["primary", "secondary"] },
+          "description": { "type": "string" },
+          "goals": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "kind", "attributes"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^ENT-[A-Za-z][A-Za-z0-9]*$" },
+          "name": { "type": "string" },
+          "kind": { "enum": ["entity", "valueObject", "aggregate"] },
+          "aggregate": { "type": "string" },
+          "isAggregateRoot": { "type": "boolean" },
+          "context": { "type": "string", "description": "Bounded context name" },
+          "description": { "type": "string" },
+          "attributes": { "type": "array", "items": { "type": "object", "required": ["name", "type"], "properties": { "name": { "type": "string" }, "type": { "enum": ["text", "number", "money", "date", "datetime", "boolean", "enum", "reference", "json"] }, "values": { "type": "array", "items": { "type": "string" } }, "required": { "type": "boolean" }, "sensitivity": { "enum": ["public", "internal", "personal", "sensitive"] } } } },
+          "relations": { "type": "array", "items": { "type": "object", "required": ["to", "kind", "cardinality"], "properties": { "to": { "type": "string", "pattern": "^ENT-" }, "kind": { "enum": ["reference", "composition", "aggregation"] }, "cardinality": { "enum": ["one-to-one", "one-to-many", "many-to-one", "many-to-many"] }, "label": { "type": "string" } } } },
+          "events": { "type": "array", "items": { "type": "string" }, "description": "Domain events raised by this entity, PascalCase past tense" }
+        }
+      }
+    },
+    "businessRules": {
+      "type": "array",
+      "items": { "type": "object", "required": ["id", "statement", "appliesTo"], "properties": { "id": { "type": "string", "pattern": "^BR-[0-9]{3,}$" }, "statement": { "type": "string" }, "appliesTo": { "type": "array", "items": { "type": "string" } } } }
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "title", "priority", "acceptanceCriteria"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^REQ-[FNS]-[0-9]{3,}$" },
+          "kind": { "enum": ["functional", "non-functional", "security"] },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "priority": { "enum": ["must", "should", "could", "wont"] },
+          "actors": { "type": "array", "items": { "type": "string", "pattern": "^ACT-" } },
+          "goals": { "type": "array", "items": { "type": "string", "pattern": "^GOAL-" } },
+          "relatedRules": { "type": "array", "items": { "type": "string", "pattern": "^BR-" } },
+          "acceptanceCriteria": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+          "source": { "enum": ["stated", "inferred"] },
+          "apiSurface": { "enum": ["exposed", "internal"], "description": "Set by validation: whether the requirement is reachable via the API contract" }
+        }
+      }
+    },
+    "userStories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "epic", "story", "actor", "requirements", "scenarios"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^US-[0-9]{3,}$" },
+          "epic": { "type": "string", "pattern": "^EPIC-[0-9]{2,}$" },
+          "story": { "type": "string" },
+          "actor": { "type": "string", "pattern": "^ACT-" },
+          "requirements": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^REQ-" } },
+          "scenarios": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["name", "given", "when", "then"], "properties": { "name": { "type": "string" }, "given": { "type": "string" }, "when": { "type": "string" }, "then": { "type": "string" } } } },
+          "points": { "enum": [1, 2, 3, 5, 8] }
+        }
+      }
+    },
+    "architecture": { "$ref": "architecture.schema.json" },
+    "database": { "$ref": "database.schema.json" },
+    "security": {
+      "type": "object",
+      "properties": {
+        "dataClassification": { "type": "array", "items": { "type": "object", "required": ["target", "level"], "properties": { "target": { "type": "string", "description": "ENT-* or ENT-*.attribute" }, "level": { "enum": ["public", "internal", "personal", "sensitive"] } } } },
+        "threats": { "type": "array", "items": { "type": "object", "required": ["id", "boundary", "stride", "description", "mitigation"], "properties": { "id": { "type": "string", "pattern": "^THR-[0-9]{3,}$" }, "boundary": { "type": "string" }, "stride": { "enum": ["spoofing", "tampering", "repudiation", "informationDisclosure", "denialOfService", "elevationOfPrivilege"] }, "description": { "type": "string" }, "likelihood": { "enum": ["low", "medium", "high"] }, "impact": { "enum": ["low", "medium", "high"] }, "mitigation": { "type": "string", "description": "REQ-S-* id or the literal 'accepted'" }, "acceptedBecause": { "type": "string" } } } },
+        "authModel": { "type": "object", "properties": { "authentication": { "type": "string" }, "sessionStrategy": { "type": "string" }, "notes": { "type": "string" } } },
+        "authorizationMatrix": { "type": "array", "items": { "type": "object", "required": ["role", "capability", "allowed"], "properties": { "role": { "type": "string" }, "capability": { "type": "string" }, "allowed": { "type": "boolean" }, "condition": { "type": "string" } } } }
+      }
+    },
+    "api": {
+      "type": "object",
+      "properties": {
+        "style": { "enum": ["rest", "graphql", "rpc", "mixed"] },
+        "conventions": { "type": "object", "properties": { "pagination": { "type": "string" }, "versioning": { "type": "string" }, "errorEnvelope": { "type": "string" }, "idempotency": { "type": "string" } } },
+        "operations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "resource", "method", "path", "auth", "responses", "stories"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^API-[a-z0-9-]+$" },
+              "resource": { "type": "string" },
+              "method": { "enum": ["GET", "POST", "PUT", "PATCH", "DELETE", "QUERY", "MUTATION", "SUBSCRIPTION"] },
+              "path": { "type": "string" },
+              "auth": { "type": "object", "required": ["required"], "properties": { "required": { "type": "boolean" }, "roles": { "type": "array", "items": { "type": "string" } }, "justification": { "type": "string" } } },
+              "request": { "type": "object" },
+              "responses": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["status"], "properties": { "status": { "type": "integer" }, "body": { "type": "object" }, "error": { "type": "string" } } } },
+              "stories": { "type": "array", "items": { "type": "string", "pattern": "^US-" } },
+              "async": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
+    "stack": {
+      "type": "array",
+      "items": { "type": "object", "required": ["layer", "choice", "justification"], "properties": { "layer": { "type": "string" }, "choice": { "type": "string" }, "justification": { "type": "string" }, "imposedByConstraint": { "type": "boolean" }, "adr": { "type": "string", "pattern": "^ADR-" } } }
+    },
+    "engineering": {
+      "type": "object",
+      "properties": {
+        "backend": { "type": "object", "properties": { "moduleLayout": { "type": "object" }, "layers": { "type": "array", "items": { "type": "object" } }, "crossCutting": { "type": "object" }, "patterns": { "type": "array", "items": { "type": "object" } }, "risks": { "type": "array", "items": { "type": "string" } } } },
+        "frontend": { "type": "object", "properties": { "routes": { "type": "array", "items": { "type": "object" } }, "componentStrategy": { "type": "object" }, "stateModel": { "type": "object" }, "apiIntegration": { "type": "object" }, "nfrBudgets": { "type": "object" } } },
+        "devops": { "type": "object", "properties": { "topology": { "type": "array", "items": { "type": "object" } }, "environments": { "type": "array", "items": { "type": "object" } }, "pipeline": { "type": "array", "items": { "type": "object" } }, "observability": { "type": "object" }, "dataProtection": { "type": "object" }, "secrets": { "type": "object" } } },
+        "testStrategy": { "type": "object", "properties": { "coverage": { "type": "array", "items": { "type": "object" } }, "contractTests": { "type": "array", "items": { "type": "object" } }, "e2eJourneys": { "type": "array", "items": { "type": "object" } }, "nfrTests": { "type": "array", "items": { "type": "object" } }, "gates": { "type": "array", "items": { "type": "object" } }, "tooling": { "type": "array", "items": { "type": "string" } }, "gaps": { "type": "array", "items": { "type": "object" } } } }
+      }
+    },
+    "roadmap": {
+      "type": "object",
+      "description": "Structure documented by example in templates/roadmap.json",
+      "properties": { "phases": { "type": "array", "items": { "type": "object" } }, "risks": { "type": "array", "items": { "type": "object" } } }
+    },
+    "backlog": { "type": "array", "items": { "type": "object", "required": ["id", "type", "ref"], "properties": { "id": { "type": "string" }, "type": { "enum": ["story", "enabler"] }, "ref": { "type": "string" }, "points": { "type": "integer" }, "dependsOn": { "type": "array", "items": { "type": "string" } }, "sprint": { "type": "integer" } } } },
+    "documentation": {
+      "type": "object",
+      "properties": {
+        "readme": { "type": "string" },
+        "technical": { "type": "string" },
+        "api": { "type": "string" },
+        "diagrams": { "type": "array", "items": { "type": "object", "required": ["diagramId", "title", "narrative"], "properties": { "diagramId": { "type": "string" }, "title": { "type": "string" }, "narrative": { "type": "string" }, "highlights": { "type": "array", "items": { "type": "string" } }, "omissions": { "type": "array", "items": { "type": "string" } } } } },
+        "exports": { "type": "array", "items": { "type": "object", "required": ["format", "manifest"], "properties": { "format": { "type": "string" }, "manifest": { "type": "object" }, "url": { "type": "string" } } } }
+      }
+    },
+    "runState": {
+      "type": "object",
+      "required": ["phase", "sectionStatus"],
+      "properties": {
+        "runId": { "type": "string" },
+        "intent": { "enum": ["NEW_PROJECT", "REVISION", "REFINEMENT", "QUESTION", "EXPORT"] },
+        "phase": { "enum": ["INTAKE", "CLARIFICATION", "REQUIREMENTS", "ARCHITECTURE", "ENGINEERING", "DOCUMENTATION", "VALIDATION", "COMPOSE", "DONE"] },
+        "plan": { "type": "object" },
+        "sectionStatus": { "type": "object", "additionalProperties": { "enum": ["missing", "draft", "valid", "stale", "blocked"] } },
+        "blockages": { "type": "array", "items": { "type": "object", "required": ["section", "reason"], "properties": { "section": { "type": "string" }, "reason": { "type": "string" } } } },
+        "history": { "type": "array", "items": { "type": "object" } }
+      }
+    }
+  }
+}

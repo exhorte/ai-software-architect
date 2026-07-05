@@ -1,0 +1,48 @@
+{
+  "$comment": "Canonical roadmap + backlog instance — the structure documentation/roadmap.md must produce (referenced by schemas/project.schema.json). Phase 1 is always the walking skeleton; enablers are explicit typed items; no calendar dates, relative units only.",
+  "roadmap": {
+    "phases": [
+      {
+        "id": "PH-01",
+        "name": "Walking Skeleton",
+        "objective": "Prove the architecture end to end with one buyer journey, deployed to staging.",
+        "milestone": "A buyer can browse one seeded product and place an order that persists — demonstrable in staging.",
+        "stories": ["US-021"],
+        "enablers": ["ENB-ci-pipeline", "ENB-environments", "ENB-auth-setup"]
+      },
+      {
+        "id": "PH-02",
+        "name": "Seller Onboarding",
+        "objective": "Sellers manage their own catalog.",
+        "milestone": "A seller signs up, publishes a product, and sees it live in the catalog.",
+        "stories": ["US-010", "US-014", "US-015"],
+        "enablers": ["ENB-media-storage"]
+      },
+      {
+        "id": "PH-03",
+        "name": "Hardening & Should-haves",
+        "objective": "Close the should-priority backlog and the deferred NFRs.",
+        "milestone": "Performance budget met on the two core journeys; promo codes live.",
+        "stories": ["US-030", "US-031"],
+        "enablers": ["ENB-observability"]
+      }
+    ],
+    "risks": [
+      {
+        "id": "RSK-01",
+        "statement": "ASM-002 (single warehouse per seller) drives the Phase 2 inventory model; if reversed, PH-02 stories US-014/US-015 need rework.",
+        "threatens": "PH-02",
+        "mitigation": "Confirm ASM-002 with the user before PH-02 starts."
+      }
+    ]
+  },
+  "backlog": [
+    { "id": "BLG-001", "type": "enabler", "ref": "ENB-environments", "points": 2, "dependsOn": [], "sprint": 1 },
+    { "id": "BLG-002", "type": "enabler", "ref": "ENB-ci-pipeline", "points": 3, "dependsOn": ["BLG-001"], "sprint": 1 },
+    { "id": "BLG-003", "type": "enabler", "ref": "ENB-auth-setup", "points": 3, "dependsOn": ["BLG-001"], "sprint": 1 },
+    { "id": "BLG-004", "type": "story", "ref": "US-021", "points": 5, "dependsOn": ["BLG-002", "BLG-003"], "sprint": 2 },
+    { "id": "BLG-005", "type": "enabler", "ref": "ENB-media-storage", "points": 2, "dependsOn": ["BLG-002"], "sprint": 3 },
+    { "id": "BLG-006", "type": "story", "ref": "US-010", "points": 3, "dependsOn": ["BLG-003"], "sprint": 3 },
+    { "id": "BLG-007", "type": "story", "ref": "US-014", "points": 3, "dependsOn": ["BLG-005", "BLG-006"], "sprint": 4 }
+  ]
+}

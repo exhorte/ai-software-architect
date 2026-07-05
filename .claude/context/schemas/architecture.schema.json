@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-software-architect.dev/schemas/architecture.schema.json",
+  "title": "Architecture Section",
+  "description": "The `architecture` section of Shared Memory. Subsection ownership: style/components/adrs by solution_architect, uml by uml_architect, c4 by c4_architect.",
+  "type": "object",
+  "properties": {
+    "style": {
+      "type": "object",
+      "required": ["name", "adr"],
+      "properties": {
+        "name": { "enum": ["modular-monolith", "microservices", "event-driven", "serverless", "layered", "hexagonal", "hybrid"] },
+        "summary": { "type": "string" },
+        "adr": { "type": "string", "pattern": "^ADR-[0-9]{3,}$" }
+      }
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "responsibilities", "requirements"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^CMP-[a-z0-9-]+$" },
+          "name": { "type": "string" },
+          "responsibilities": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+          "entities": { "type": "array", "items": { "type": "string", "pattern": "^ENT-" } },
+          "requirements": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^REQ-" } },
+          "boundedContext": { "type": "string" },
+          "communicatesWith": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["component", "style"],
+              "properties": {
+                "component": { "type": "string", "pattern": "^CMP-" },
+                "style": { "enum": ["sync", "async"] },
+                "protocol": { "type": "string" },
+                "description": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "adrs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "status", "context", "decision", "alternatives", "consequences"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^ADR-[0-9]{3,}$" },
+          "title": { "type": "string" },
+          "status": { "enum": ["proposed", "accepted", "superseded"] },
+          "supersededBy": { "type": "string", "pattern": "^ADR-" },
+          "context": { "type": "string" },
+          "decision": { "type": "string" },
+          "alternatives": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "object", "required": ["option", "rejectedBecause"], "properties": { "option": { "type": "string" }, "rejectedBecause": { "type": "string" } } }
+          },
+          "consequences": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+          "relatedRequirements": { "type": "array", "items": { "type": "string", "pattern": "^REQ-" } }
+        }
+      }
+    },
+    "uml": {
+      "type": "array",
+      "description": "Structured UML diagram documents",
+      "items": { "$ref": "uml.schema.json" }
+    },
+    "c4": {
+      "type": "array",
+      "description": "One document per C4 level present",
+      "items": {
+        "type": "object",
+        "required": ["level", "elements", "relations"],
+        "properties": {
+          "level": { "enum": [1, 2, 3] },
+          "elements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "name", "kind", "description"],
+              "properties": {
+                "id": { "type": "string", "pattern": "^C4-[a-z0-9-]+$" },
+                "name": { "type": "string" },
+                "kind": { "enum": ["person", "softwareSystem", "externalSystem", "container", "component", "datastore", "messageBroker"] },
+                "technology": { "type": "string" },
+                "description": { "type": "string" },
+                "mapsTo": { "type": "array", "items": { "type": "string" }, "description": "CMP-* (containers/components) or ACT-* (persons)" }
+              }
+            }
+          },
+          "relations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["from", "to", "description"],
+              "properties": {
+                "from": { "type": "string", "pattern": "^C4-" },
+                "to": { "type": "string", "pattern": "^C4-" },
+                "description": { "type": "string" },
+                "technology": { "type": "string", "description": "Required at levels 2-3, enforced by rules/validation.md" }
+              }
+            }
+          },
+          "canvasProjection": { "type": "object", "description": "Optional React Flow projection per prompts/output_formats.md" }
+        }
+      }
+    }
+  }
+}
