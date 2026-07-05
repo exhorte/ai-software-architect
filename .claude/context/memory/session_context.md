@@ -11,13 +11,14 @@
 Loading order when working on the platform:
 
 1. Root `CLAUDE.md` — philosophy, global rules (auto-loaded).
-2. `memory/project_state.md` — where the build is.
-3. The context files relevant to the task, and only those:
+2. `memory/project_state.md` — where the build is; `memory/handoff.md` — the live session flow.
+3. `project/roadmap.md` — phase statuses — then **only the current phase's** specification in `project/phases/`. Never bulk-load all phase files; each is written to stand alone.
+4. The context files relevant to the task, and only those:
    - Orchestration work → `coordinator/*`
    - Agent behavior work → the specific `agents/<team>/<agent>.md` + `prompts/*`
    - Data model work → `schemas/*` + `shared_memory.md`
    - App/UI work → `../platform/` (architecture, UI, code standards, dev workflow)
-4. Never bulk-load the whole `agents/` tree; agent files are independent by design.
+5. Never bulk-load the whole `agents/` tree; agent files are independent by design.
 
 Session end: update `project_state.md` if anything meaningful changed.
 

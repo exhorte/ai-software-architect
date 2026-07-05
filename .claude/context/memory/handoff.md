@@ -25,6 +25,7 @@
 7. **Nettoyage validé par l'utilisateur** : supprimés `context/feature-specs/` (29 specs historiques), `context/screenshots/`, `docs/superpowers/`, `public/readme/` + `public/thumbnails/` (assets marketing JSM). README réécrit pour le produit AI Software Architect. Commit `17ef040`.
 8. Ce fichier handoff créé et intégré au chargement systématique de session (`CLAUDE.md` § Context Loading) ; `project_state.md` synchronisé (Phase 0 close, décisions et questions ouvertes à jour).
 9. **Consolidation finale** : `context/` racine absorbé dans `.claude/context/platform/` (overview, architecture, ui, code_standards, dev_workflow — adaptés aux conventions du cerveau) ; `context/progress-tracker.md` supprimé (historique complet : `git show 4a0365d:context/progress-tracker.md`) ; `docs/vendor/trigger-v4-rules.md` supprimé (redondant avec les skills `.agents/skills/trigger-*`). Dossiers racine `context/` et `docs/` supprimés ; toutes les références (CLAUDE.md, AGENTS.md, cerveau, README) mises à jour.
+10. **Roadmap par phases** : `project/roadmap.md` (index maître + statuts + discipline de phase) et `project/phases/phase-01…06` créés — un mini cahier des charges par phase (objectif, périmètre, livrables, critères d'acceptation, dépendances, points de validation). Chargement scopé câblé : on ne charge que la phase courante (`CLAUDE.md` § Context Loading, `session_context.md`) ; la roadmap de `project_state.md` pointe désormais là-bas.
 
 ## En vol / non terminé
 
@@ -32,7 +33,7 @@
 
 ## Prochaine action immédiate
 
-- **Phase 1 — Shared Memory runtime** : concevoir le modèle Prisma du document de mémoire partagée (1 document par projet, statuts de section, versionnage) + module de validation contre `schemas/project.schema.json`. Commencer par une proposition de schéma Prisma avant tout code.
+- **Phase 1 — Shared Memory runtime** : cahier des charges complet dans `../project/phases/phase-01-shared-memory.md`. Premier pas (checkpoint 1 de la phase) : proposer le croquis du modèle Prisma à l'utilisateur avant toute migration. Décisions à prendre en ouverture : stratégie de chargement des schémas JSON au runtime, choix du test runner.
 
 ## Décisions récentes à connaître (détail : project_state.md § Decisions Log)
 

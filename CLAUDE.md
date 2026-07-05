@@ -25,13 +25,14 @@ Load in this order, and only what the task needs (details: `.claude/context/memo
 
 1. `.claude/context/memory/project_state.md` — current phase, decisions, next steps. **Always.**
 2. `.claude/context/memory/handoff.md` — live session handoff: what was just done, what's in flight, immediate next action. **Always; keep it updated during the session and before closing it.**
-3. Task-scoped:
+3. `.claude/context/project/roadmap.md` — phase index and statuses; then load **only the current phase's** specification from `.claude/context/project/phases/`. Other phase files are loaded only when planning ahead or revising the cut.
+4. Task-scoped:
    - Orchestration / pipeline work → `.claude/context/coordinator/`
    - Agent behavior → the specific `.claude/context/agents/<team>/<agent>.md` + `.claude/context/prompts/`
    - Data contracts → `.claude/context/schemas/` + `.claude/context/memory/shared_memory.md`
    - Naming / validation / coherence questions → `.claude/context/rules/`
    - Application code (UI, APIs, tasks, DB) → `.claude/context/platform/` (`architecture.md`, `ui.md`, `code_standards.md`, `dev_workflow.md`; product vision: `overview.md`)
-4. Vocabulary doubts → `.claude/context/memory/glossary.md`.
+5. Vocabulary doubts → `.claude/context/memory/glossary.md`.
 
 ## Global Rules
 

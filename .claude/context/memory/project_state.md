@@ -20,13 +20,7 @@ Built on the Ghost AI foundation (Next.js 16, Clerk, Prisma/PostgreSQL, Livebloc
 
 ## Transformation Roadmap
 
-1. **Phase 0 — Brain** ✅ `.claude/context/` knowledge base, coordinator spec, agent contracts, schemas, rules.
-2. **Phase 1 — Shared Memory runtime**: Prisma model + persistence adapter for the project memory document; schema validation module.
-3. **Phase 2 — Orchestrator runtime**: Trigger.dev orchestrator task implementing the state machine of `../coordinator/orchestrator.md`; agent invocation as child tasks loading prompts from `../agents/`.
-4. **Phase 3 — Business Team** end-to-end (idea → clarifications → requirements → stories) surfaced in the existing AI sidebar.
-5. **Phase 4 — Architecture Team** with canvas projection of UML/C4/ERD reusing the existing design-agent canvas writer.
-6. **Phase 5 — Engineering + Documentation Teams**, exports replacing the current single-shot spec generator.
-7. **Phase 6 — Multi-LLM abstraction, additional workflows** (review, reverse engineering).
+Moved to `../project/roadmap.md` (master index + statuses) with one mini-specification per phase in `../project/phases/` (objectives, deliverables, acceptance criteria, dependencies, validation checkpoints). Load only the current phase's file per the roadmap's loading rule.
 
 ## Inherited Foundation (Ghost AI, features 01–29 — all complete)
 
@@ -42,6 +36,7 @@ Auth (Clerk), project CRUD + collaborators, real-time canvas (Liveblocks + React
 - 2026-07-05 — `memory/handoff.md` added as the live session-handoff journal (French, always loaded per `CLAUDE.md` § Context Loading); durable state stays here, session flow lives there.
 - 2026-07-05 — `.claude/settings.json` allowlist (lint, build, `tsc --noEmit`, `prisma validate/format`) approved explicitly by the user.
 - 2026-07-05 — **Supersedes the "root `context/` remains" decision above**: all knowledge consolidated into `.claude/context/`. Root `context/` absorbed as `platform/` (overview, architecture, ui, code_standards, dev_workflow); `progress-tracker.md` deleted (recoverable at `4a0365d`); `docs/vendor/trigger-v4-rules.md` deleted (redundant with `.agents/skills/trigger-*`). Root `context/` and `docs/` removed.
+- 2026-07-05 — Roadmap decomposed into per-phase specifications (`../project/roadmap.md` + `../project/phases/`), each with objectives, deliverables, acceptance criteria, dependencies, and validation checkpoints. Scoped loading: only the current phase file enters session context. Phase 5 covers Engineering *and* Documentation teams (Documentation's read contracts need Engineering's output); Phase 6 is a container to re-cut into tracks at kickoff.
 
 ## In Progress
 
@@ -56,4 +51,4 @@ Auth (Clerk), project CRUD + collaborators, real-time canvas (Liveblocks + React
 
 ## Next Up
 
-- Phase 1: design the Prisma model for the project memory document + section statuses.
+- Phase 1 (Shared Memory runtime) — full specification: `../project/phases/phase-01-shared-memory.md`. First step per its checkpoints: propose the Prisma model sketch for user review before migrating.
