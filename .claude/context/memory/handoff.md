@@ -11,8 +11,8 @@
 ## Session en cours
 
 - **Date** : 2026-07-05
-- **Objectif** : Phase 0 — refonte des fondations (`.claude/context/`, points d'entrée, permissions).
-- **Statut** : ✅ Terminée.
+- **Objectif** : Phase 0 — refonte des fondations (`.claude/context/`, points d'entrée, permissions) + nettoyage des artefacts hérités.
+- **Statut** : ✅ Terminée et clôturée. Phase 0 complète ; dépôt propre sur le commit `17ef040`.
 
 ## Ce qui vient d'être fait
 
@@ -22,7 +22,8 @@
 4. `context/` racine mis à jour : `project-overview.md` réécrit pour la nouvelle vision, `progress-tracker.md` archivé (remplacé par `project_state.md`), liens corrigés.
 5. `.claude/settings.json` : allowlist ajoutée (lint, build, tsc --noEmit, prisma validate/format) — validée explicitement par l'utilisateur.
 6. **Git initialisé** (le dossier n'était pas un dépôt) ; commit de sauvegarde `4a0365d` pris avant nettoyage.
-7. **Nettoyage validé par l'utilisateur** : supprimés `context/feature-specs/` (29 specs historiques), `context/screenshots/`, `docs/superpowers/`, `public/readme/` + `public/thumbnails/` (assets marketing JSM). README réécrit pour le produit AI Software Architect.
+7. **Nettoyage validé par l'utilisateur** : supprimés `context/feature-specs/` (29 specs historiques), `context/screenshots/`, `docs/superpowers/`, `public/readme/` + `public/thumbnails/` (assets marketing JSM). README réécrit pour le produit AI Software Architect. Commit `17ef040`.
+8. Ce fichier handoff créé et intégré au chargement systématique de session (`CLAUDE.md` § Context Loading) ; `project_state.md` synchronisé (Phase 0 close, décisions et questions ouvertes à jour).
 
 ## En vol / non terminé
 
