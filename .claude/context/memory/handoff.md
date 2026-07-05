@@ -46,7 +46,10 @@
 
 - Nom définitif du produit (placeholder : **AI Software Architect**) — le `package.json` s'appelle encore `ghost-ai`, à renommer en même temps.
 - Formats d'export au-delà du bundle Markdown (PDF ? OpenAPI ?) — à trancher avant Phase 5.
-- Créer un dépôt distant (GitHub) pour pousser l'historique git local ?
+
+## Dépôt distant
+
+- `origin` = <https://github.com/exhorte/ai-software-architect.git> (poussé le 2026-07-05, `main` suit `origin/main`). Pousser après chaque commit de clôture d'unité.
 
 ## Pièges connus
 

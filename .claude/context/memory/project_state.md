@@ -45,7 +45,6 @@ Auth (Clerk), project CRUD + collaborators, real-time canvas (Liveblocks + React
 ## Open Questions
 
 - Final product name (placeholder: **AI Software Architect**) — rename `package.json` (`ghost-ai`) at the same time.
-- Create a remote (GitHub) repository and push the local history?
 - Export formats beyond Markdown bundle (PDF? docx? OpenAPI file?) — decide before Phase 5.
 - Multi-LLM strategy: current runtime uses Gemini via `@ai-sdk/google`; the AI SDK provider abstraction is the assumed seam for Phase 6.
 
