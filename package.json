@@ -8,6 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
+    "pretest": "npm run prompts:build",
+    "prompts:build": "tsx scripts/build-agent-prompts.ts",
+    "prebuild": "npm run prompts:build",
     "postinstall": "prisma generate"
   },
   "dependencies": {
