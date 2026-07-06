@@ -16,6 +16,7 @@ model Project {
   collaborators ProjectCollaborator[]
   specs         ProjectSpec[]
   memory        ProjectMemory?
+  runs          Run[]
 
   @@index([ownerId])
   @@index([createdAt])
