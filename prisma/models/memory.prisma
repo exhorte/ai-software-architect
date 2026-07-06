@@ -1,0 +1,27 @@
+model ProjectMemory {
+  id            String   @id @default(cuid())
+  projectId     String   @unique
+  document      Json
+  memoryVersion Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  project   Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  revisions MemoryRevision[]
+}
+
+model MemoryRevision {
+  id              String   @id @default(cuid())
+  memoryId        String
+  version         Int
+  agentId         String
+  runId           String?
+  stepId          String?
+  changedSections Json
+  createdAt       DateTime @default(now())
+
+  memory ProjectMemory @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+
+  @@unique([memoryId, version])
+  @@index([memoryId, createdAt])
+}
