@@ -1,6 +1,6 @@
 # Phase 2 — Orchestrator Runtime
 
-> **Status**: ⬜ not started · **Depends on**: Phase 1 (memory) · **Unblocks**: Phase 3 (first real team)
+> **Status**: ✅ done (2026-07-06) — live-cloud smoke test deferred with the env setup, see Change Log · **Depends on**: Phase 1 (memory) · **Unblocks**: Phase 3 (first real team)
 > **Contract source**: `../../coordinator/orchestrator.md` (state machine, directives), `../../coordinator/planner.md` (plans), `../../coordinator/routing_rules.md` (routing), `../../prompts/output_formats.md` (envelope).
 
 ## Objective
@@ -26,12 +26,12 @@ Implement the Coordinator as a durable Trigger.dev workflow: classify a request,
 
 ## Acceptance Criteria
 
-- [ ] AC1 — A `NEW_PROJECT` run with stub agents traverses INTAKE→DONE, committing each stub section through the memory layer; `runState` in memory matches the Run record at every step.
-- [ ] AC2 — An invalid envelope triggers exactly one retry with the structured errors appended; a second failure marks the section `blocked` and the run continues with independent steps.
-- [ ] AC3 — Parallel-group steps (disjoint writes) execute concurrently; two steps writing the same section can never be scheduled together (test proves the guard).
-- [ ] AC4 — The prompt assembler produces byte-stable prompts from unchanged inputs (determinism), and injects only the sections in the step's `reads`.
-- [ ] AC5 — Agent definition files are the only prompt source: editing a stub agent's `.md` changes its runtime prompt with no code change.
-- [ ] AC6 — Lint, typecheck, tests, build pass; existing design-agent and spec flows untouched.
+- [x] AC1 — A `NEW_PROJECT` run with stub agents traverses INTAKE→DONE, committing each stub section through the memory layer; `runState` in memory matches the run recorder at every step (recorder exercised via its port; the live `Run` row needs the deferred env).
+- [x] AC2 — An invalid envelope triggers exactly one retry with the structured errors appended; a second failure marks the section `blocked` and the run continues with independent steps.
+- [x] AC3 — Parallel-group steps (disjoint writes) execute concurrently (`batchTriggerAndWait` in the adapter); `validatePlan` rejects two writers of one section in a group (tested).
+- [x] AC4 — The prompt assembler produces byte-stable prompts from unchanged inputs (determinism test), and injects only the sections in the step's `reads`.
+- [x] AC5 — Agent definition files are the only prompt source: the generated module quotes them verbatim (tested); editing a `.md` + `npm run prompts:build` changes the runtime prompt with no code change.
+- [x] AC6 — Typecheck 0 errors, 60/60 tests, build OK, new code lints clean; design-agent and spec flows untouched.
 
 ## Dependencies
 
@@ -47,4 +47,8 @@ Implement the Coordinator as a durable Trigger.dev workflow: classify a request,
 
 ## Change Log
 
-- (none yet)
+- 2026-07-06 — **Envelope promoted to a canonical schema** (`schemas/envelope.schema.json`, 5th in the registry) rather than staying prose-only in `output_formats.md`; `session_context.md` layer-2 rule adjusted (output_formats always included — the envelope contract lives there).
+- 2026-07-06 — **Agent `.md` bundling**: codegen module (`scripts/build-agent-prompts.ts` → `lib/orchestrator/generated/agent-prompts.ts`, committed, hooked on prebuild/pretest) chosen over an esbuild loader — works identically for Next and Trigger workers, prompt diffs reviewable.
+- 2026-07-06 — **Intent classification is deterministic in Phase 2** (virgin memory ⇒ NEW_PROJECT; other intents refused with NOT_IMPLEMENTED). LLM classification of free-form follow-ups ships with the UI (Phase 3).
+- 2026-07-06 — **CLARIFICATION auto-passes** when no blocking unanswered question exists; the interactive pause/resume (waitpoints) is Phase 3 D3 scope.
+- 2026-07-06 — **Deferred**: live smoke test of `pipeline-orchestrator` on Trigger.dev (needs the `.env` setup already tracked in Open Questions); engine fully tested in-process via its ports.

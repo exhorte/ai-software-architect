@@ -11,33 +11,31 @@
 ## Session en cours
 
 - **Date** : 2026-07-06
-- **Objectif** : Phase 1 — Shared Memory runtime (processus complet : compréhension → TDD → validation utilisateur → implémentation → clôture).
-- **Statut** : ✅ Terminée et clôturée. Phase courante : **Phase 2 — Orchestrator runtime**.
+- **Objectif** : Phases 1 puis 2 (processus complet à chaque fois : compréhension → TDD → validation utilisateur → implémentation → clôture).
+- **Statut** : ✅ Phases 1 et 2 terminées et clôturées. Phase courante : **Phase 3 — Business Team end-to-end**.
 
-## Ce qui vient d'être fait
+## Ce qui vient d'être fait (Phase 2)
 
-1. TDD Phase 1 validé par l'utilisateur (décisions D1–D7, consignées dans `project_state.md` § Decisions Log).
-2. `lib/memory/` livré : registre Ajv 2020 sur les schémas canoniques (import build-time), validation niveaux 1–2, ownership (+ exception REQ-S testée), cycle de vie des statuts, carte d'invalidation, `MemoryStore` (init / lectures scopées / commit atomique avec verrou optimiste / markStale / reconstruction par version), port de persistance + adaptateurs Prisma et in-memory. **33/33 tests** (templates canoniques en golden tests), `tsc` 0 erreur, build OK.
-3. Modèles `ProjectMemory` + `MemoryRevision` ; migration `20260706120000_add_project_memory` générée **hors-ligne** (pas de `.env` sur ce poste) ; client Prisma régénéré.
-4. Contrats synchronisés : carte d'invalidation étendue dans `coordinator/planner.md` (security/engineering/backlog) ; précision `runState.history` ↔ `MemoryRevision` dans `shared_memory.md`.
-5. Hygiène : `app/generated/**` et `.trigger/**` exclus d'ESLint (549 fausses erreurs éliminées).
-6. Commits T1→T7 poussés sur `origin/main`.
+1. TDD Phase 2 validé (topologie orchestrateur parent + agent-runner enfants ; croquis `Run` ; module de prompts généré committé).
+2. `lib/orchestrator/` livré : table de routage + planner (plan NEW_PROJECT 18 étapes, garde anti-double-écrivain), enveloppe (5ᵉ schéma canonique `envelope.schema.json`, parsing tolérant aux fences), prompts 4 couches déterministes, couture LLM (`AgentModel`, Gemini + registre par agent), **engine** (machine à états, groupes parallèles, retry sémantique ×1 puis blocked-and-continue, CLARIFICATION auto-passée sans question bloquante, gates structurels) derrière les ports `AgentInvoker`/`RunRecorder`.
+3. `trigger/orchestrator.ts` + `trigger/agent-runner.ts` : wrappers minces (`triggerAndWait`/`batchTriggerAndWait`, retry Trigger = 1 — les retries sont sémantiques). Modèle `Run` + migration hors-ligne `20260706130000_add_run`.
+4. `scripts/build-agent-prompts.ts` : les 18 fiches `.md` compilées en module TS committé (`npm run prompts:build`, hooks prebuild/pretest) — les `.md` restent l'unique source.
+5. Vérification : **60/60 tests**, `tsc` 0 erreur, build OK, lint propre sur le nouveau code. Commits U1→U9 poussés.
 
 ## En vol / non terminé
 
-- Rien en vol. Deux différés (aussi dans `project_state.md` § Open Questions) :
-  - **Migration non appliquée** — faire `npx prisma migrate deploy` + smoke test `PrismaPersistence` dès que `DATABASE_URL` existe (indispensable avant les runs réels de la Phase 3 ; la Phase 2 teste sur l'adaptateur in-memory).
-  - 4 erreurs lint **préexistantes** (canvas/liveblocks) — unité de nettoyage dédiée.
+- Rien en vol. Différés inchangés : **`.env` absent** (migrations `add_project_memory` + `add_run` à déployer, smoke test Trigger.dev cloud) — **à lever en ouverture de Phase 3**, première phase qui tourne en réel ; 4 erreurs lint préexistantes (canvas/liveblocks).
 
 ## Prochaine action immédiate
 
-- **Phase 2 — Orchestrator runtime** : cahier des charges `../project/phases/phase-02-orchestrator.md`. Premier pas (checkpoint 1) : note technique d'une page (topologie des tâches Trigger.dev, croquis du modèle `Run`) à faire valider avant tout code. Décisions d'ouverture : bundling des `.md` agents dans le worker, couture provider LLM.
+- **Phase 3 — Business Team** : cahier des charges `../project/phases/phase-03-business-team.md`. Premier pas (checkpoint 1) : croquis UX de la boucle de clarification + visualiseur mémoire à faire valider. Décision d'ouverture : mécanisme pause/reprise CLARIFICATION (waitpoints Trigger vs run-par-segment). Pré-requis : configurer `.env` (DB, Clerk, Liveblocks, Trigger, Gemini).
 
 ## Décisions récentes à connaître (détail : project_state.md § Decisions Log)
 
-- La couche mémoire est **la seule voie d'écriture** vers la Shared Memory ; l'orchestrateur (Phase 2) la consomme via le port `MemoryPersistence`.
-- Les schémas JSON de `.claude/context/schemas/` sont importés au build — jamais copiés.
-- Les cartes ownership/invalidation du code **miroitent les contrats** (`consistency.md`, `planner.md`) : contrat d'abord, code ensuite.
+- L'**engine vit dans `lib/orchestrator/`** derrière des ports — les tâches Trigger sont des wrappers minces ; tout se teste in-process.
+- L'**enveloppe agent est un schéma canonique** (`envelope.schema.json`) validé avant tout commit.
+- Les prompts runtime = module **généré** depuis les `.md` (`npm run prompts:build`) ; éditer un agent = éditer son `.md`.
+- La couche mémoire reste la seule voie d'écriture ; l'engine la consomme via `MemoryStore`.
 
 ## Pièges connus
 
