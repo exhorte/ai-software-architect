@@ -1,6 +1,6 @@
 # Phase 1 — Shared Memory Runtime
 
-> **Status**: ⬜ not started · **Depends on**: Phase 0 (brain) · **Unblocks**: Phase 2 (orchestrator)
+> **Status**: ✅ done (2026-07-06) — one environment item deferred, see Change Log · **Depends on**: Phase 0 (brain) · **Unblocks**: Phase 2 (orchestrator)
 > **Contract source**: `../../memory/shared_memory.md` (behavioral contract), `../../schemas/*.json` (structure). This phase implements those contracts — any mismatch discovered here is fixed in the contract *first*, then in code.
 
 ## Objective
@@ -25,13 +25,13 @@ Give the platform a real, persistent, validated Shared Memory: one versioned doc
 
 ## Acceptance Criteria
 
-- [ ] AC1 — Committing a schema-valid section persists it, bumps `memoryVersion` by exactly 1, and appends one `MemoryRevision`.
-- [ ] AC2 — Committing an invalid payload (wrong shape, bad ID pattern, unknown section key) is rejected atomically with a structured error list; the stored document is untouched.
-- [ ] AC3 — A commit by an agent that does not own the target section is rejected (the `REQ-S-*` append exception is honored).
-- [ ] AC4 — Scoped reads return only the requested sections, never the whole document.
-- [ ] AC5 — `markStale` on `requirements` flips exactly the sections listed in the invalidation map, nothing else.
-- [ ] AC6 — Revision history allows reconstructing any prior version of a section (test proves one round-trip).
-- [ ] AC7 — `npm run lint`, `npx tsc --noEmit`, tests, and `npm run build` all pass; no existing app behavior changed.
+- [x] AC1 — Committing a schema-valid section persists it, bumps `memoryVersion` by exactly 1, and appends one `MemoryRevision`.
+- [x] AC2 — Committing an invalid payload (wrong shape, bad ID pattern, unknown section key) is rejected atomically with a structured error list; the stored document is untouched.
+- [x] AC3 — A commit by an agent that does not own the target section is rejected (the `REQ-S-*` append exception is honored).
+- [x] AC4 — Scoped reads return only the requested sections, never the whole document.
+- [x] AC5 — `markStale` on `requirements` flips exactly the sections listed in the invalidation map, nothing else.
+- [x] AC6 — Revision history allows reconstructing any prior version of a section (test proves one round-trip).
+- [x] AC7 — `npx tsc --noEmit` (0 errors), 33/33 tests, `npm run build` pass; no existing app behavior changed. Lint: new code clean; 4 **pre-existing** errors in canvas/liveblocks code remain (logged as open question, out of phase scope).
 
 ## Dependencies
 
@@ -47,4 +47,7 @@ Give the platform a real, persistent, validated Shared Memory: one versioned doc
 
 ## Change Log
 
-- (none yet)
+- 2026-07-06 — **Migration created offline**: no `.env`/`DATABASE_URL` exists on this workstation, so `prisma migrate dev` was replaced by `prisma migrate diff --script` (datamodel→datamodel) written to `prisma/migrations/20260706120000_add_project_memory/`. Apply with `npx prisma migrate deploy` once the database env is configured — required before Phase 3's live runs (Phase 2 tests use the in-memory adapter).
+- 2026-07-06 — **Checkpoint 1 folded into plan validation**: the Prisma model sketch was reviewed and approved as part of the phase TDD instead of a separate message.
+- 2026-07-06 — **Invalidation map extended in the contract** (`coordinator/planner.md`): `security`, `engineering`, `backlog` added as downstream targets — they existed in the ownership/consistency contracts but were missing from the map.
+- 2026-07-06 — **Lint hygiene fix** (T6): `app/generated/**` and `.trigger/**` excluded from ESLint; `npm run lint` was reporting 549 errors from build artifacts.

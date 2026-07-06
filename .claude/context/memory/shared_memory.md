@@ -50,15 +50,15 @@ Downstream agents may only consume sections that are `valid` (or `draft` within 
 1. **Scoped reads.** An agent receives only the sections in its declared `Reads` contract — keeps prompts small and prevents solution bias (e.g. Business Team never sees `stack`).
 2. **Single writer.** One agent owns each section per run (`../rules/consistency.md` holds the ownership map).
 3. **Structured only.** Free text is legal *inside* designated fields (descriptions, narratives). The structure itself is always schema-conforming JSON.
-4. **Append-only history.** Commits never destroy: superseded versions are archived under `runState.history` with run ID and timestamp, enabling diff-based revision plans.
+4. **Append-only history.** Commits never destroy: `runState.history` keeps a lightweight entry per commit (version, agent, sections, timestamp) while the full superseded payloads live in the `MemoryRevision` table — together they enable diff-based revision plans without bloating the document.
 5. **Traceability.** Cross-section references use IDs (`REQ-F-001`, `US-004`, `ENT-User`, `CMP-api-gateway`, `ADR-001`), never prose descriptions. ID grammar lives in `../rules/naming.md`.
 
 ## Persistence Mapping (platform runtime)
 
-When implemented in the product, memory persists through the existing storage layers (see `../platform/architecture.md`):
+Memory persists through the existing storage layers (see `../platform/architecture.md`):
 
-- Document + section statuses → PostgreSQL via Prisma (one memory document per project, versioned).
+- Document + section statuses → PostgreSQL via Prisma (`ProjectMemory`, one versioned document per project; full commit history in `MemoryRevision`). Implemented in `lib/memory/` (Phase 1): `MemoryStore` is the single write path — ownership, schema validation, statuses, optimistic locking.
 - Large rendered artifacts (exports, generated docs) → Vercel Blob, referenced by URL from `documentation.exports`.
-- Diagram canvas projections → Liveblocks room storage, keyed by diagram ID.
+- Diagram canvas projections → Liveblocks room storage, keyed by diagram ID (Phase 4).
 
-The contract in this file is storage-agnostic; only the persistence adapter knows these layers.
+The contract in this file is storage-agnostic; only the persistence adapter (`lib/memory/prisma-adapter.ts`) knows these layers.

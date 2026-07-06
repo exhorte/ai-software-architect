@@ -56,10 +56,12 @@ When upstream sections change, downstream sections become stale and must be re-p
 | Changed section | Invalidates |
 | --- | --- |
 | `project`, `actors` | everything downstream |
-| `requirements`, `userStories` | `architecture`, `database`, `api`, `stack`, `roadmap`, `documentation` |
+| `requirements`, `userStories` | `architecture`, `database`, `security`, `api`, `stack`, `engineering`, `roadmap`, `backlog`, `documentation` |
 | `entities` | `architecture.uml`, `database`, `api` |
-| `architecture` | `database` (topology), `api`, `stack`, `roadmap`, `documentation` |
-| `database`, `api`, `stack` | `roadmap`, `documentation` |
+| `architecture` | `database` (topology), `api`, `stack`, `engineering`, `roadmap`, `backlog`, `documentation` |
+| `database`, `api`, `stack` | `roadmap`, `backlog`, `documentation` |
+
+Runtime mirror: `lib/memory/status.ts` — when this table changes, that module changes with it (and vice versa, contract first).
 
 Stale sections are marked `status: "stale"` in Shared Memory; the plan must include steps that regenerate every stale section or explicitly record why it was left untouched.
 

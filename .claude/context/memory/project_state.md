@@ -16,7 +16,8 @@ Built on the Ghost AI foundation (Next.js 16, Clerk, Prisma/PostgreSQL, Livebloc
 ## Current Phase
 
 - **Phase 0 — Foundations of the agent system**: ✅ complete (2026-07-05). Brain in place, entry points rewritten, legacy artifacts cleaned up (user-approved), git history started (`4a0365d` snapshot → `17ef040` cleanup). Application code unchanged.
-- **Phase 1 — Shared Memory runtime**: not started.
+- **Phase 1 — Shared Memory runtime**: ✅ complete (2026-07-06). `lib/memory/` ships the validated, versioned memory layer (33 tests); `ProjectMemory`/`MemoryRevision` models with an offline migration. Deferred: apply the migration once `DATABASE_URL` is configured (no `.env` on this workstation).
+- **Phase 2 — Orchestrator runtime**: not started (current — spec: `../project/phases/phase-02-orchestrator.md`).
 
 ## Transformation Roadmap
 
@@ -37,6 +38,7 @@ Auth (Clerk), project CRUD + collaborators, real-time canvas (Liveblocks + React
 - 2026-07-05 — `.claude/settings.json` allowlist (lint, build, `tsc --noEmit`, `prisma validate/format`) approved explicitly by the user.
 - 2026-07-05 — **Supersedes the "root `context/` remains" decision above**: all knowledge consolidated into `.claude/context/`. Root `context/` absorbed as `platform/` (overview, architecture, ui, code_standards, dev_workflow); `progress-tracker.md` deleted (recoverable at `4a0365d`); `docs/vendor/trigger-v4-rules.md` deleted (redundant with `.agents/skills/trigger-*`). Root `context/` and `docs/` removed.
 - 2026-07-05 — Roadmap decomposed into per-phase specifications (`../project/roadmap.md` + `../project/phases/`), each with objectives, deliverables, acceptance criteria, dependencies, and validation checkpoints. Scoped loading: only the current phase file enters session context. Phase 5 covers Engineering *and* Documentation teams (Documentation's read contracts need Engineering's output); Phase 6 is a container to re-cut into tracks at kickoff.
+- 2026-07-06 — Phase 1 design decisions (validated TDD): **D1** canonical JSON Schemas imported at build time (no copies, Ajv 2020 registry); **D2** whole-document validation on a draft copy (atomic commits); **D3** statuses live in `runState.sectionStatus`, full history in `MemoryRevision`, lightweight refs in `runState.history`; **D4** optimistic locking on `memoryVersion`; **D5** persistence port + Prisma/in-memory adapters (hexagonal seam, reused by Phase 2); **D6** Vitest as test runner; **D7** ownership/invalidation maps encoded as typed data mirroring the contracts (`lib/memory/ownership.ts`, `lib/memory/status.ts`).
 
 ## In Progress
 
@@ -45,9 +47,11 @@ Auth (Clerk), project CRUD + collaborators, real-time canvas (Liveblocks + React
 ## Open Questions
 
 - Final product name (placeholder: **AI Software Architect**) — rename `package.json` (`ghost-ai`) at the same time.
+- No `.env` on this workstation: migration `20260706120000_add_project_memory` awaits `npx prisma migrate deploy`; live-DB smoke test of `PrismaPersistence` pending. Required before Phase 3 live runs.
+- 4 pre-existing lint errors in `components/editor/canvas/*` and `liveblocks.config.ts` (React hooks rules, `{}` types) — fix in a dedicated cleanup unit, not opportunistically.
 - Export formats beyond Markdown bundle (PDF? docx? OpenAPI file?) — decide before Phase 5.
 - Multi-LLM strategy: current runtime uses Gemini via `@ai-sdk/google`; the AI SDK provider abstraction is the assumed seam for Phase 6.
 
 ## Next Up
 
-- Phase 1 (Shared Memory runtime) — full specification: `../project/phases/phase-01-shared-memory.md`. First step per its checkpoints: propose the Prisma model sketch for user review before migrating.
+- Phase 2 (Orchestrator runtime) — full specification: `../project/phases/phase-02-orchestrator.md`. First step per its checkpoints: one-page technical note (task topology, Run model sketch) for user review before coding.

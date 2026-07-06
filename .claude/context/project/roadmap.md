@@ -12,14 +12,14 @@
 | # | Phase | Specification | Status | Depends on |
 | --- | --- | --- | --- | --- |
 | 0 | Brain & foundations | (done in place — see `../memory/project_state.md` § Decisions Log) | ✅ done (2026-07-05) | — |
-| 1 | Shared Memory runtime | `phases/phase-01-shared-memory.md` | ⬜ not started | 0 |
+| 1 | Shared Memory runtime | `phases/phase-01-shared-memory.md` | ✅ done (2026-07-06) | 0 |
 | 2 | Orchestrator runtime | `phases/phase-02-orchestrator.md` | ⬜ not started | 1 |
 | 3 | Business Team end-to-end | `phases/phase-03-business-team.md` | ⬜ not started | 2 |
 | 4 | Architecture Team + canvas projection | `phases/phase-04-architecture-team.md` | ⬜ not started | 3 |
 | 5 | Engineering & Documentation Teams + export | `phases/phase-05-engineering-team.md` | ⬜ not started | 4 |
 | 6 | Advanced platform (multi-LLM, new workflows) | `phases/phase-06-advanced-platform.md` | ⬜ not started | 5 |
 
-**Current phase: 1 — Shared Memory runtime.**
+**Current phase: 2 — Orchestrator runtime.**
 
 ## Phase Discipline
 

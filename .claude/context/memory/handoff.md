@@ -10,49 +10,38 @@
 
 ## Session en cours
 
-- **Date** : 2026-07-05
-- **Objectif** : Phase 0 — refonte des fondations (`.claude/context/`, points d'entrée, permissions) + nettoyage des artefacts hérités + consolidation totale du savoir dans `.claude/context/`.
-- **Statut** : ✅ Terminée et clôturée. Phase 0 complète ; le cerveau est désormais l'unique base de connaissances (46 fichiers).
+- **Date** : 2026-07-06
+- **Objectif** : Phase 1 — Shared Memory runtime (processus complet : compréhension → TDD → validation utilisateur → implémentation → clôture).
+- **Statut** : ✅ Terminée et clôturée. Phase courante : **Phase 2 — Orchestrator runtime**.
 
 ## Ce qui vient d'être fait
 
-1. Analyse complète du dépôt Ghost AI (code applicatif conservé intégralement — c'est le véhicule de livraison).
-2. Cerveau `.claude/context/` créé : 41 fichiers (coordinator ×4, memory ×4, agents ×18, prompts ×3, schemas ×4, templates ×5, rules ×3). Tous les JSON parsent.
-3. `CLAUDE.md` racine réécrit en point d'entrée léger ; `AGENTS.md` aligné ; docs Trigger.dev déplacées vers `docs/vendor/trigger-v4-rules.md`.
-4. `context/` racine mis à jour : `project-overview.md` réécrit pour la nouvelle vision, `progress-tracker.md` archivé (remplacé par `project_state.md`), liens corrigés.
-5. `.claude/settings.json` : allowlist ajoutée (lint, build, tsc --noEmit, prisma validate/format) — validée explicitement par l'utilisateur.
-6. **Git initialisé** (le dossier n'était pas un dépôt) ; commit de sauvegarde `4a0365d` pris avant nettoyage.
-7. **Nettoyage validé par l'utilisateur** : supprimés `context/feature-specs/` (29 specs historiques), `context/screenshots/`, `docs/superpowers/`, `public/readme/` + `public/thumbnails/` (assets marketing JSM). README réécrit pour le produit AI Software Architect. Commit `17ef040`.
-8. Ce fichier handoff créé et intégré au chargement systématique de session (`CLAUDE.md` § Context Loading) ; `project_state.md` synchronisé (Phase 0 close, décisions et questions ouvertes à jour).
-9. **Consolidation finale** : `context/` racine absorbé dans `.claude/context/platform/` (overview, architecture, ui, code_standards, dev_workflow — adaptés aux conventions du cerveau) ; `context/progress-tracker.md` supprimé (historique complet : `git show 4a0365d:context/progress-tracker.md`) ; `docs/vendor/trigger-v4-rules.md` supprimé (redondant avec les skills `.agents/skills/trigger-*`). Dossiers racine `context/` et `docs/` supprimés ; toutes les références (CLAUDE.md, AGENTS.md, cerveau, README) mises à jour.
-10. **Roadmap par phases** : `project/roadmap.md` (index maître + statuts + discipline de phase) et `project/phases/phase-01…06` créés — un mini cahier des charges par phase (objectif, périmètre, livrables, critères d'acceptation, dépendances, points de validation). Chargement scopé câblé : on ne charge que la phase courante (`CLAUDE.md` § Context Loading, `session_context.md`) ; la roadmap de `project_state.md` pointe désormais là-bas.
+1. TDD Phase 1 validé par l'utilisateur (décisions D1–D7, consignées dans `project_state.md` § Decisions Log).
+2. `lib/memory/` livré : registre Ajv 2020 sur les schémas canoniques (import build-time), validation niveaux 1–2, ownership (+ exception REQ-S testée), cycle de vie des statuts, carte d'invalidation, `MemoryStore` (init / lectures scopées / commit atomique avec verrou optimiste / markStale / reconstruction par version), port de persistance + adaptateurs Prisma et in-memory. **33/33 tests** (templates canoniques en golden tests), `tsc` 0 erreur, build OK.
+3. Modèles `ProjectMemory` + `MemoryRevision` ; migration `20260706120000_add_project_memory` générée **hors-ligne** (pas de `.env` sur ce poste) ; client Prisma régénéré.
+4. Contrats synchronisés : carte d'invalidation étendue dans `coordinator/planner.md` (security/engineering/backlog) ; précision `runState.history` ↔ `MemoryRevision` dans `shared_memory.md`.
+5. Hygiène : `app/generated/**` et `.trigger/**` exclus d'ESLint (549 fausses erreurs éliminées).
+6. Commits T1→T7 poussés sur `origin/main`.
 
 ## En vol / non terminé
 
-- Rien de bloquant. Aucune modification du code applicatif (voulu — Phase 0 = documentation/fondations uniquement).
+- Rien en vol. Deux différés (aussi dans `project_state.md` § Open Questions) :
+  - **Migration non appliquée** — faire `npx prisma migrate deploy` + smoke test `PrismaPersistence` dès que `DATABASE_URL` existe (indispensable avant les runs réels de la Phase 3 ; la Phase 2 teste sur l'adaptateur in-memory).
+  - 4 erreurs lint **préexistantes** (canvas/liveblocks) — unité de nettoyage dédiée.
 
 ## Prochaine action immédiate
 
-- **Phase 1 — Shared Memory runtime** : cahier des charges complet dans `../project/phases/phase-01-shared-memory.md`. Premier pas (checkpoint 1 de la phase) : proposer le croquis du modèle Prisma à l'utilisateur avant toute migration. Décisions à prendre en ouverture : stratégie de chargement des schémas JSON au runtime, choix du test runner.
+- **Phase 2 — Orchestrator runtime** : cahier des charges `../project/phases/phase-02-orchestrator.md`. Premier pas (checkpoint 1) : note technique d'une page (topologie des tâches Trigger.dev, croquis du modèle `Run`) à faire valider avant tout code. Décisions d'ouverture : bundling des `.md` agents dans le worker, couture provider LLM.
 
 ## Décisions récentes à connaître (détail : project_state.md § Decisions Log)
 
-- `CLAUDE.md` reste à la racine (auto-chargé par Claude Code) ; le savoir vit dans `.claude/context/`.
-- Fiches agents = source de vérité des prompts runtime (chargées par le futur orchestrateur Trigger.dev).
-- Échanges inter-agents : JSON validé par schéma uniquement ; un propriétaire par section mémoire.
-- Conventions canvas du design-agent promues en grammaire visuelle système (`prompts/output_formats.md`).
-
-## Questions ouvertes pour l'utilisateur
-
-- Nom définitif du produit (placeholder : **AI Software Architect**) — le `package.json` s'appelle encore `ghost-ai`, à renommer en même temps.
-- Formats d'export au-delà du bundle Markdown (PDF ? OpenAPI ?) — à trancher avant Phase 5.
-
-## Dépôt distant
-
-- `origin` = <https://github.com/exhorte/ai-software-architect.git> (poussé le 2026-07-05, `main` suit `origin/main`). Pousser après chaque commit de clôture d'unité.
+- La couche mémoire est **la seule voie d'écriture** vers la Shared Memory ; l'orchestrateur (Phase 2) la consomme via le port `MemoryPersistence`.
+- Les schémas JSON de `.claude/context/schemas/` sont importés au build — jamais copiés.
+- Les cartes ownership/invalidation du code **miroitent les contrats** (`consistency.md`, `planner.md`) : contrat d'abord, code ensuite.
 
 ## Pièges connus
 
-- Next.js 16 : breaking changes — vérifier `node_modules/next/dist/docs/` avant tout code framework ; `proxy.ts` remplace `middleware.ts`.
-- Prisma 7 : client généré dans `app/generated/prisma/`, constructeur exige `{ adapter }`.
-- Ne pas toucher `components/ui/*` (shadcn) ni les internals tiers.
+- Pas de `.env` sur ce poste : ni DB, ni clés Clerk/Liveblocks/Trigger — le dev end-to-end local attend la config d'environnement.
+- Next.js 16 : vérifier `node_modules/next/dist/docs/` avant tout code framework ; `proxy.ts` remplace `middleware.ts`.
+- Prisma 7 : client généré dans `app/generated/prisma/`, constructeur exige `{ adapter }` ; ne pas linter les artefacts générés.
+- Trigger.dev v4 : jamais `Promise.all` avec `triggerAndWait`/`wait.*` ; toujours vérifier `result.ok` (skills `.claude/skills/trigger-*`).
