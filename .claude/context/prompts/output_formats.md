@@ -8,7 +8,7 @@
 
 ## 1. Agent Output Envelope
 
-Every agent returns exactly one JSON envelope. No prose before or after it.
+Every agent returns exactly one JSON envelope. No prose before or after it. Formal contract: `../schemas/envelope.schema.json` (validated by the Orchestrator before any commit).
 
 ```json
 {

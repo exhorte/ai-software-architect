@@ -29,7 +29,7 @@ An agent invocation prompt is assembled from exactly four layers, in order:
 | Layer | Source | Size discipline |
 | --- | --- | --- |
 | 1. Agent definition | `../agents/<team>/<agent>.md` | Static, versioned |
-| 2. Transversal rules | `../prompts/response_rules.md` (+ `output_formats.md` / `coding_rules.md` only if the agent produces diagrams / code) | Static |
+| 2. Transversal rules | `../prompts/response_rules.md` + `output_formats.md` (always — the envelope contract lives there); `coding_rules.md` only for code-producing agents | Static |
 | 3. Memory slice | Only the sections in the step's `reads` list, as JSON | Bounded by contract |
 | 4. Step instruction | The plan step: task, expected `writes`, prior validation errors on retry | Small |
 

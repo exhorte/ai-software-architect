@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-software-architect.dev/schemas/envelope.schema.json",
+  "title": "Agent Output Envelope",
+  "description": "The standard wrapper of every agent output (prompts/output_formats.md § 1). Every agent returns exactly one envelope; the Orchestrator validates it before looking at the writes.",
+  "type": "object",
+  "required": ["agent", "version", "status", "writes"],
+  "properties": {
+    "agent": {
+      "type": "string",
+      "pattern": "^(business|architecture|engineering|documentation)/[a-z_]+$",
+      "description": "Agent path under .claude/context/agents/"
+    },
+    "version": { "type": "integer", "minimum": 1, "description": "Envelope format version" },
+    "status": { "enum": ["ok", "partial", "failed"] },
+    "writes": {
+      "type": "object",
+      "description": "Writable section key → proposed section content. Keys must stay within the step's write contract; payloads are validated against project.schema.json at commit.",
+      "propertyNames": { "pattern": "^[a-zA-Z]+(\\.[a-zA-Z]+)?$" }
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["severity", "message"],
+        "properties": {
+          "severity": { "enum": ["info", "warning", "blocking"] },
+          "target": { "type": "string", "description": "Memory path or ID the issue points at" },
+          "message": { "type": "string" }
+        }
+      }
+    },
+    "confidence": { "enum": ["high", "medium", "low"] },
+    "assumptionsUsed": { "type": "array", "items": { "type": "string", "pattern": "^ASM-" } }
+  }
+}
