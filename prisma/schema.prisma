@@ -1,7 +1,7 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// Prisma schema — single-file (prisma.config.ts points at prisma/schema.prisma).
+// Consolidated from the former prisma/models/*.prisma on 2026-07-10 when the
+// project moved to a fresh Prisma Postgres database for AI Software Architect.
+// Learn more: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client"
@@ -10,4 +10,124 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// ─── Projects & collaboration ────────────────────────────────────────────────
+
+enum ProjectStatus {
+  DRAFT
+  ARCHIVED
+}
+
+model Project {
+  id            String        @id @default(cuid())
+  ownerId       String
+  name          String
+  description   String?
+  status        ProjectStatus @default(DRAFT)
+  canvasBlobUrl String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  collaborators ProjectCollaborator[]
+  specs         ProjectSpec[]
+  memory        ProjectMemory?
+  runs          Run[]
+
+  @@index([ownerId])
+  @@index([createdAt])
+}
+
+model ProjectCollaborator {
+  id        String   @id @default(cuid())
+  projectId String
+  email     String
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, email])
+  @@index([email])
+  @@index([projectId, createdAt])
+}
+
+model ProjectSpec {
+  id        String   @id @default(cuid())
+  projectId String
+  filePath  String
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+// ─── Legacy background-task index (design/spec generators) ────────────────────
+
+model TaskRun {
+  id        String   @id @default(cuid())
+  runId     String   @unique
+  projectId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@index([runId])
+  @@index([userId, projectId])
+}
+
+// ─── Shared Memory runtime (Phase 1) ─────────────────────────────────────────
+
+model ProjectMemory {
+  id            String   @id @default(cuid())
+  projectId     String   @unique
+  document      Json
+  memoryVersion Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  project   Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  revisions MemoryRevision[]
+}
+
+model MemoryRevision {
+  id              String   @id @default(cuid())
+  memoryId        String
+  version         Int
+  agentId         String
+  runId           String?
+  stepId          String?
+  changedSections Json
+  createdAt       DateTime @default(now())
+
+  memory ProjectMemory @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+
+  @@unique([memoryId, version])
+  @@index([memoryId, createdAt])
+}
+
+// ─── Orchestrator runtime (Phase 2) ──────────────────────────────────────────
+
+enum RunStatus {
+  RUNNING
+  WAITING_CLARIFICATION
+  DONE
+  FAILED
+}
+
+model Run {
+  id           String    @id @default(cuid())
+  projectId    String
+  userId       String
+  intent       String
+  phase        String
+  status       RunStatus @default(RUNNING)
+  plan         Json
+  blockages    Json?
+  triggerRunId String?   @unique
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
 }

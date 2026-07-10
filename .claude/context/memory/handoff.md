@@ -10,9 +10,30 @@
 
 ## Session en cours
 
-- **Date** : 2026-07-06
-- **Objectif** : Phases 1 puis 2 (processus complet à chaque fois : compréhension → TDD → validation utilisateur → implémentation → clôture).
-- **Statut** : ✅ Phases 1 et 2 terminées et clôturées. Phase courante : **Phase 3 — Business Team end-to-end**.
+- **Date** : 2026-07-10
+- **Objectif** : Déploiement sur **Prisma Compute** + remise à neuf de la config Prisma/Clerk (demande utilisateur, avant d'entamer la Phase 3).
+- **Statut** : ✅ **App déployée et live** sur Compute. Base Prisma Postgres neuve + migration `init` appliquée. Reste à créer les services (Clerk, etc.) pour rendre l'app fonctionnelle. Phase courante inchangée : **Phase 3 — Business Team** (l'infra live la débloque).
+
+## Infra déployée (2026-07-10)
+
+- **Projet Prisma** : `software_architect` (`proj_cmrf5nufq10mbwfdv0gxmgbff`, workspace « Personal »).
+- **Base** : `production` (`db_cmrf5outc10obwfdviwymva8k`), Prisma Postgres, **eu-central-1**, migration `20260710163659_init` appliquée. `DATABASE_URL` (connexion Postgres directe) dans `.env` (gitignoré).
+- **App Compute** : nom `ghost-ai` (hérité de `package.json name`), branche `main`, production. **URL : https://bdm8rc1y6wusqz15cjh1972a.fra.prisma.build**.
+- **État runtime** : le serveur répond mais `/sign-in` renvoie **500** — normal, clés Clerk absentes.
+- Schéma Prisma **consolidé en fichier unique** (`prisma/schema.prisma`) ; `prisma/models/` et l'ancien historique de migration supprimés (« historique neuf »). Stack Prisma réinstallée (elle avait été retirée de `package.json`). `next.config.ts` : `output: "standalone"`.
+
+## Action utilisateur requise pour rendre l'app fonctionnelle
+
+Créer les services et coller leurs clés dans `.env` (placeholders commentés déjà en place — **ne pas laisser de valeur vide, Compute les refuse**), puis **redéployer** (`bunx @prisma/cli@latest app deploy --project proj_cmrf5nufq10mbwfdv0gxmgbff --branch main --env .env --prod --yes`) :
+- **Clerk** (auth) — `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` (+ URLs sign-in/up)
+- **Liveblocks** — `LIVEBLOCKS_SECRET_KEY`
+- **Trigger.dev** — `TRIGGER_SECRET_KEY`, `TRIGGER_PROJECT_REF`, `NEXT_PUBLIC_TRIGGER_PUBLIC_API_KEY`
+- **Vercel Blob** — `BLOB_READ_WRITE_TOKEN`
+- **Google Gemini** — `GOOGLE_AI_API_KEY`
+
+## Ce qui vient d'être fait (Phases 1-2, rappel)
+
+`lib/memory/` (Phase 1) et `lib/orchestrator/` (Phase 2) livrés et testés (93 tests au total : 33 + 60). Détail dans `project_state.md` § Decisions Log.
 
 ## Ce qui vient d'être fait (Phase 2)
 
@@ -28,7 +49,8 @@
 
 ## Prochaine action immédiate
 
-- **Phase 3 — Business Team** : cahier des charges `../project/phases/phase-03-business-team.md`. Premier pas (checkpoint 1) : croquis UX de la boucle de clarification + visualiseur mémoire à faire valider. Décision d'ouverture : mécanisme pause/reprise CLARIFICATION (waitpoints Trigger vs run-par-segment). Pré-requis : configurer `.env` (DB, Clerk, Liveblocks, Trigger, Gemini).
+- Court terme : créer les services (Clerk d'abord) + coller les clés dans `.env` + redéployer → app fonctionnelle. La DB live est déjà prête.
+- Puis **Phase 3 — Business Team** : cahier des charges `../project/phases/phase-03-business-team.md`. Premier pas (checkpoint 1) : croquis UX de la boucle de clarification + visualiseur mémoire à faire valider. Décision d'ouverture : mécanisme pause/reprise CLARIFICATION (waitpoints Trigger vs run-par-segment).
 
 ## Décisions récentes à connaître (détail : project_state.md § Decisions Log)
 
@@ -39,7 +61,9 @@
 
 ## Pièges connus
 
-- Pas de `.env` sur ce poste : ni DB, ni clés Clerk/Liveblocks/Trigger — le dev end-to-end local attend la config d'environnement.
+- `.env` (gitignoré) contient le vrai `DATABASE_URL` + placeholders **commentés** pour les autres services. Compute **rejette toute variable à valeur vide** dans `--env .env` → garder les clés inutilisées commentées.
+- Déploiement Compute : `bunx @prisma/cli@latest` (pas la CLI ORM `prisma`) ; auth via `auth login` (session locale partagée). Next.js exige `output: "standalone"`.
+- Schéma Prisma désormais **mono-fichier** (`prisma/schema.prisma`) — ne pas recréer `prisma/models/`.
 - Next.js 16 : vérifier `node_modules/next/dist/docs/` avant tout code framework ; `proxy.ts` remplace `middleware.ts`.
 - Prisma 7 : client généré dans `app/generated/prisma/`, constructeur exige `{ adapter }` ; ne pas linter les artefacts générés.
 - Trigger.dev v4 : jamais `Promise.all` avec `triggerAndWait`/`wait.*` ; toujours vérifier `result.ok` (skills `.claude/skills/trigger-*`).
