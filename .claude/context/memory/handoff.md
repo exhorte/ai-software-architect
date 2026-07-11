@@ -24,9 +24,11 @@
 
 ## Action utilisateur requise pour rendre l'app fonctionnelle
 
-Services câblés + testés (clés dev dans `.env`, gitignoré) : **Clerk ✅**, **Liveblocks ✅**, **Vercel Blob ✅**, **Google Gemini ✅**. Reste **Trigger.dev** (`TRIGGER_SECRET_KEY`, `TRIGGER_PROJECT_REF`, `NEXT_PUBLIC_TRIGGER_PUBLIC_API_KEY`) — a une CLI (`npx trigger.dev@latest login/init`).
+**Les 5 services runtime sont câblés + testés** (clés dev dans `.env`, gitignoré) : **Clerk ✅**, **Liveblocks ✅**, **Vercel Blob ✅**, **Google Gemini ✅**, **Trigger.dev ✅**. `npm run build` passe avec toutes les intégrations. `NEXT_PUBLIC_TRIGGER_PUBLIC_API_KEY` inutile (tokens publics générés côté serveur).
 
-Une fois Trigger.dev fait → **redéployer** avec toutes les clés : `bunx @prisma/cli@latest app deploy --project proj_cmrf5nufq10mbwfdv0gxmgbff --branch main --env .env --prod --yes`. Note : `.env` a des clés **development** ; pour le live, prévoir les clés **production** (Clerk « Nyx ai » instance prod → `pk_live_`/`sk_live_`, idem Liveblocks prod).
+Reste pour une app *déployée* fonctionnelle :
+1. **Déployer les tâches Trigger.dev** : `npx trigger.dev@latest deploy` (ou `dev` en local pour tester les features IA end-to-end). Auth CLI séparée via `npx trigger.dev@latest login`.
+2. **Redéployer Compute** avec toutes les clés : `bunx @prisma/cli@latest app deploy --project proj_cmrf5nufq10mbwfdv0gxmgbff --branch main --env .env --prod --yes`. Pour le live, prévoir les clés **production** (Clerk « Nyx ai » instance prod → `pk_live_`/`sk_live_`, Liveblocks/Trigger prod).
 
 Piège modèle : `gemini-2.5-flash` est déprécié (refusé aux nouveaux comptes) → le code utilise désormais **`gemini-flash-latest`** (override `GEMINI_MODEL`).
 
