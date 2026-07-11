@@ -24,13 +24,11 @@
 
 ## Action utilisateur requise pour rendre l'app fonctionnelle
 
-**Clerk : ✅ fait** (auth câblée, instance development, vérifiée en local). Restent à créer + coller dans `.env` (placeholders commentés en place — **valeur vide refusée par Compute**), puis **redéployer** (`bunx @prisma/cli@latest app deploy --project proj_cmrf5nufq10mbwfdv0gxmgbff --branch main --env .env --prod --yes`) :
-- **Liveblocks** — `LIVEBLOCKS_SECRET_KEY`
-- **Trigger.dev** — `TRIGGER_SECRET_KEY`, `TRIGGER_PROJECT_REF`, `NEXT_PUBLIC_TRIGGER_PUBLIC_API_KEY`
-- **Vercel Blob** — `BLOB_READ_WRITE_TOKEN`
-- **Google Gemini** — `GOOGLE_AI_API_KEY`
+Services câblés + testés (clés dev dans `.env`, gitignoré) : **Clerk ✅**, **Liveblocks ✅**, **Vercel Blob ✅**, **Google Gemini ✅**. Reste **Trigger.dev** (`TRIGGER_SECRET_KEY`, `TRIGGER_PROJECT_REF`, `NEXT_PUBLIC_TRIGGER_PUBLIC_API_KEY`) — a une CLI (`npx trigger.dev@latest login/init`).
 
-Pour le déploiement live : Clerk n'a qu'une instance **development** — configurer l'**instance production** de l'app Clerk « Nyx ai » (dashboard) et utiliser ses clés (`pk_live_`/`sk_live_`) pour le redéploiement Compute, sinon bannière/limites dev en prod.
+Une fois Trigger.dev fait → **redéployer** avec toutes les clés : `bunx @prisma/cli@latest app deploy --project proj_cmrf5nufq10mbwfdv0gxmgbff --branch main --env .env --prod --yes`. Note : `.env` a des clés **development** ; pour le live, prévoir les clés **production** (Clerk « Nyx ai » instance prod → `pk_live_`/`sk_live_`, idem Liveblocks prod).
+
+Piège modèle : `gemini-2.5-flash` est déprécié (refusé aux nouveaux comptes) → le code utilise désormais **`gemini-flash-latest`** (override `GEMINI_MODEL`).
 
 ## Ce qui vient d'être fait (Phases 1-2, rappel)
 

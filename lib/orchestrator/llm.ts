@@ -11,7 +11,7 @@ export interface AgentModel {
 }
 
 export class GeminiModel implements AgentModel {
-  constructor(private readonly modelId: string = process.env.GEMINI_MODEL ?? "gemini-2.5-flash") {}
+  constructor(private readonly modelId: string = process.env.GEMINI_MODEL ?? "gemini-flash-latest") {}
 
   async generate(prompt: string): Promise<string> {
     const google = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY })
