@@ -24,28 +24,26 @@
 
 ## Action utilisateur requise pour rendre l'app fonctionnelle
 
-Créer les services et coller leurs clés dans `.env` (placeholders commentés déjà en place — **ne pas laisser de valeur vide, Compute les refuse**), puis **redéployer** (`bunx @prisma/cli@latest app deploy --project proj_cmrf5nufq10mbwfdv0gxmgbff --branch main --env .env --prod --yes`) :
-- **Clerk** (auth) — `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` (+ URLs sign-in/up)
+**Clerk : ✅ fait** (auth câblée, instance development, vérifiée en local). Restent à créer + coller dans `.env` (placeholders commentés en place — **valeur vide refusée par Compute**), puis **redéployer** (`bunx @prisma/cli@latest app deploy --project proj_cmrf5nufq10mbwfdv0gxmgbff --branch main --env .env --prod --yes`) :
 - **Liveblocks** — `LIVEBLOCKS_SECRET_KEY`
 - **Trigger.dev** — `TRIGGER_SECRET_KEY`, `TRIGGER_PROJECT_REF`, `NEXT_PUBLIC_TRIGGER_PUBLIC_API_KEY`
 - **Vercel Blob** — `BLOB_READ_WRITE_TOKEN`
 - **Google Gemini** — `GOOGLE_AI_API_KEY`
 
+Pour le déploiement live : Clerk n'a qu'une instance **development** — configurer l'**instance production** de l'app Clerk « Nyx ai » (dashboard) et utiliser ses clés (`pk_live_`/`sk_live_`) pour le redéploiement Compute, sinon bannière/limites dev en prod.
+
 ## Ce qui vient d'être fait (Phases 1-2, rappel)
 
 `lib/memory/` (Phase 1) et `lib/orchestrator/` (Phase 2) livrés et testés (93 tests au total : 33 + 60). Détail dans `project_state.md` § Decisions Log.
 
-## Ce qui vient d'être fait (Phase 2)
+## Ce qui vient d'être fait (2026-07-11)
 
-1. TDD Phase 2 validé (topologie orchestrateur parent + agent-runner enfants ; croquis `Run` ; module de prompts généré committé).
-2. `lib/orchestrator/` livré : table de routage + planner (plan NEW_PROJECT 18 étapes, garde anti-double-écrivain), enveloppe (5ᵉ schéma canonique `envelope.schema.json`, parsing tolérant aux fences), prompts 4 couches déterministes, couture LLM (`AgentModel`, Gemini + registre par agent), **engine** (machine à états, groupes parallèles, retry sémantique ×1 puis blocked-and-continue, CLARIFICATION auto-passée sans question bloquante, gates structurels) derrière les ports `AgentInvoker`/`RunRecorder`.
-3. `trigger/orchestrator.ts` + `trigger/agent-runner.ts` : wrappers minces (`triggerAndWait`/`batchTriggerAndWait`, retry Trigger = 1 — les retries sont sémantiques). Modèle `Run` + migration hors-ligne `20260706130000_add_run`.
-4. `scripts/build-agent-prompts.ts` : les 18 fiches `.md` compilées en module TS committé (`npm run prompts:build`, hooks prebuild/pretest) — les `.md` restent l'unique source.
-5. Vérification : **60/60 tests**, `tsc` 0 erreur, build OK, lint propre sur le nouveau code. Commits U1→U9 poussés.
+- Correction préventive Clerk v7 / Next App Router : `ClerkProvider` déplacé dans `<body>` dans `app/layout.tsx`.
+- **Clerk auth câblée** via Clerk CLI 2.1.0 : `clerk init --app app_3GKmTfaVtbaG47z8pi69ukKLGd6` (a détecté et réutilisé l'intégration existante) + `clerk env pull` (clés dev dans `.env`). App Clerk « Nyx ai ». Matcher `/__clerk/:path*` ajouté à `proxy.ts`. Thème Clerk conservé (`dark` @clerk/ui + tokens du design system, plus abouti que le shadcn générique). Vérifié local : `/sign-in` 200, `/` → 307 sign-in ; `clerk doctor` vert (hors instance prod). Typage OK.
 
 ## En vol / non terminé
 
-- Rien en vol. Différés inchangés : **`.env` absent** (migrations `add_project_memory` + `add_run` à déployer, smoke test Trigger.dev cloud) — **à lever en ouverture de Phase 3**, première phase qui tourne en réel ; 4 erreurs lint préexistantes (canvas/liveblocks).
+- Rien en vol côté code. Différés : créer les services manquants (Clerk, Liveblocks, Trigger.dev, Vercel Blob, Google Gemini), remplir `.env`, redéployer Compute, puis lancer les smoke tests. 4 erreurs lint préexistantes (canvas/liveblocks) restent à traiter dans une unité dédiée.
 
 ## Prochaine action immédiate
 
