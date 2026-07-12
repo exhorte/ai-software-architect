@@ -44,3 +44,7 @@ next-env.d.ts
 
 /app/generated/prisma
 .prisma/
+
+# trigger.dev
+.trigger/tmp/
+.trigger/watchdog.pid
