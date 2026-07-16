@@ -34,12 +34,26 @@ const EDGE_SYNC_CONFIG = {
 
 const COLOR_NAMES = ["neutral", "blue", "purple", "orange", "red", "pink", "green", "teal"];
 
-function buildSystemPrompt(): string {
+/**
+ * Extra pressure for models that cannot be forced into calling tools
+ * (toolChoice "auto"). The business prompt below is unchanged; this is only
+ * appended when the guarantee is missing.
+ */
+const AUTO_TOOL_CHOICE_REINFORCEMENT = `
+
+CRITICAL — TOOL USE IS MANDATORY:
+- You MUST answer by calling the provided tools. Prose alone is not an answer.
+- Call addNode for EVERY component of the architecture (never describe a component in text instead of calling addNode).
+- Call addEdge for every connection.
+- Call finalizeDesign LAST, with a 1-2 sentence summary.
+- Never reply with an explanation, a plan, or markdown instead of tool calls.`;
+
+export function buildSystemPrompt(forcedToolChoice = true): string {
   const colorGuide = NODE_COLORS.map(
     (c, i) => `  ${i} (${COLOR_NAMES[i]}): fill=${c.fill} text=${c.text}`
   ).join("\n");
 
-  return `You are Ghost AI, an expert system architect that generates technical architecture diagrams on a collaborative canvas.
+  const base = `You are Ghost AI, an expert system architect that generates technical architecture diagrams on a collaborative canvas.
 
 ALLOWED SHAPES (use exact value):
 - rectangle  → services, APIs, microservices, components
@@ -78,6 +92,50 @@ INSTRUCTIONS:
 - Call addNode for each node you want to place on the canvas
 - Call addEdge for each connection between nodes
 - Call finalizeDesign last with a 1-2 sentence summary of what was designed`;
+
+  return forcedToolChoice ? base : base + AUTO_TOOL_CHOICE_REINFORCEMENT;
+}
+
+/** Tools that actually build the design (finalizeDesign only summarizes). */
+export function countDesignToolCalls(calls: Array<{ toolName: string }>): {
+  design: number;
+  nodes: number;
+  finalize: boolean;
+} {
+  return {
+    design: calls.filter((c) => c.toolName !== "finalizeDesign").length,
+    nodes: calls.filter((c) => c.toolName === "addNode").length,
+    finalize: calls.some((c) => c.toolName === "finalizeDesign"),
+  };
+}
+
+/** A prompt worth designing should yield more than a single node. */
+const MIN_NODES_FOR_NON_TRIVIAL_PROMPT = 2;
+const NON_TRIVIAL_PROMPT_MIN_WORDS = 4;
+
+/**
+ * Guard for models that could not be forced into tool use: a run that produced
+ * no design tool call (or a token-effort design for a real request) is a
+ * failure, not a silent empty canvas.
+ */
+export function assertDesignProduced(
+  counts: { design: number; nodes: number },
+  prompt: string,
+  toolChoice: "required" | "auto"
+): void {
+  if (counts.design === 0) {
+    throw new Error(
+      `The model returned no design tool call (toolChoice="${toolChoice}"). ` +
+        "Nothing was applied to the canvas."
+    );
+  }
+  const isNonTrivial = prompt.trim().split(/\s+/).length >= NON_TRIVIAL_PROMPT_MIN_WORDS;
+  if (isNonTrivial && counts.nodes < MIN_NODES_FOR_NON_TRIVIAL_PROMPT) {
+    throw new Error(
+      `The model produced only ${counts.nodes} node(s) for a non-trivial request ` +
+        `(toolChoice="${toolChoice}"); expected at least ${MIN_NODES_FOR_NON_TRIVIAL_PROMPT}.`
+    );
+  }
 }
 
 function clampColor(idx: number): number {
@@ -192,25 +250,42 @@ export const designAgent = task({
       }
 
       // Provider comes from the LLM seam (LLM_PROVIDER); this task stays
-      // provider-agnostic. Tool-calling is required, so the model object is
-      // used directly rather than the text-only AgentModel interface.
-      const { value: result, used, fallback } = await runWithProvider((m) =>
-        generateText({
+      // provider-agnostic. Tool-calling is needed, so the model object is used
+      // directly rather than the text-only AgentModel interface. Whether tools
+      // can be *forced* is a model capability, never a provider check.
+      let toolChoiceUsed: "required" | "auto" = "required";
+      const { value: result, used, fallback } = await runWithProvider((m) => {
+        toolChoiceUsed = m.capabilities.supportsForcedToolChoice ? "required" : "auto";
+        return generateText({
           model: m.model,
-          system: buildSystemPrompt(),
+          system: buildSystemPrompt(m.capabilities.supportsForcedToolChoice),
           prompt: `User request: ${payload.prompt}\n\n${canvasContext}`,
           tools: canvasTools,
-          toolChoice: "required",
-        })
-      );
+          toolChoice: toolChoiceUsed,
+        });
+      });
 
-      metadata.set("llm", { provider: used.provider, model: used.modelId });
+      const toolCalls = result.steps.flatMap((s) => s.toolCalls) as ToolCall[];
+      const counts = countDesignToolCalls(toolCalls);
+
+      metadata.set("llm", {
+        provider: used.provider,
+        model: used.modelId,
+        toolChoice: toolChoiceUsed,
+        toolCalls: toolCalls.length,
+        designToolCalls: counts.design,
+        nodes: counts.nodes,
+        finalizeDesign: counts.finalize,
+      });
       if (fallback) {
         metadata.set("llmFallback", fallback);
         logger.warn("LLM provider fallback", fallback);
       }
 
-      const toolCalls = result.steps.flatMap((s) => s.toolCalls) as ToolCall[];
+      // Without a forced tool choice the model may answer in prose — refuse to
+      // report success on an empty or token-effort design.
+      assertDesignProduced(counts, payload.prompt, toolChoiceUsed);
+
       const actionCalls = toolCalls.filter((c) => c.toolName !== "finalizeDesign");
       const finalizeCall = toolCalls.find((c) => c.toolName === "finalizeDesign");
       const summary =

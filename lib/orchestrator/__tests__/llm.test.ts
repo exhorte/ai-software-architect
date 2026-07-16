@@ -92,6 +92,17 @@ describe("resolveLanguageModel", () => {
     expect(resolveLanguageModel().modelId).toBe("deepseek-chat")
   })
 
+  it("gemini: supports forcing tool calls", () => {
+    process.env.GOOGLE_AI_API_KEY = "test-key"
+    expect(resolveLanguageModel().capabilities.supportsForcedToolChoice).toBe(true)
+  })
+
+  it("deepseek: does not support forcing tool calls (thinking mode)", () => {
+    process.env.LLM_PROVIDER = "deepseek"
+    process.env.DEEPSEEK_API_KEY = "test-key"
+    expect(resolveLanguageModel().capabilities.supportsForcedToolChoice).toBe(false)
+  })
+
   it("gemini: keeps its default and the spec-model override", () => {
     process.env.GOOGLE_AI_API_KEY = "test-key"
     expect(resolveLanguageModel().modelId).toBe("gemini-flash-latest")
@@ -191,7 +202,12 @@ describe("ConfiguredModel", () => {
     const model = new ConfiguredModel()
     vi.spyOn(model, "generateDetailed").mockResolvedValue({
       value: "hello",
-      used: { provider: "deepseek", modelId: "deepseek-v4-pro", model: {} as ResolvedModel["model"] },
+      used: {
+        provider: "deepseek",
+        modelId: "deepseek-v4-pro",
+        model: {} as ResolvedModel["model"],
+        capabilities: { supportsForcedToolChoice: false },
+      },
     })
 
     await expect(model.generate("hi")).resolves.toBe("hello")

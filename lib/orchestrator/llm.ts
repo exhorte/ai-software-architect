@@ -24,11 +24,25 @@ export const SUPPORTED_PROVIDERS: readonly ProviderId[] = ["gemini", "deepseek"]
 /** Which model a call site wants: the default one, or the spec-generation one. */
 export type ModelPurpose = "default" | "spec"
 
+/**
+ * What a resolved model can do. Call sites branch on capabilities, never on the
+ * provider name — that is what keeps tasks provider-agnostic.
+ */
+export interface ModelCapabilities {
+  /**
+   * Whether the model accepts `toolChoice: "required"` (forcing a tool call).
+   * Reasoning/"thinking" models typically reject it and only accept "auto";
+   * they still call tools, just without the hard guarantee.
+   */
+  supportsForcedToolChoice: boolean
+}
+
 export interface ResolvedModel {
   provider: ProviderId
   /** Model id actually used — safe to log and to store in run metadata. */
   modelId: string
   model: LanguageModel
+  capabilities: ModelCapabilities
 }
 
 export interface ResolveOptions {
@@ -62,7 +76,12 @@ function buildGemini(purpose: ModelPurpose): ResolvedModel {
     process.env.GEMINI_MODEL ??
     DEFAULT_GEMINI_MODEL
   const google = createGoogleGenerativeAI({ apiKey })
-  return { provider: "gemini", modelId, model: google(modelId) }
+  return {
+    provider: "gemini",
+    modelId,
+    model: google(modelId),
+    capabilities: { supportsForcedToolChoice: true },
+  }
 }
 
 function buildDeepSeek(purpose: ModelPurpose): ResolvedModel {
@@ -83,7 +102,17 @@ function buildDeepSeek(purpose: ModelPurpose): ResolvedModel {
     apiKey,
     baseURL: process.env.DEEPSEEK_BASE_URL ?? DEFAULT_DEEPSEEK_BASE_URL,
   })
-  return { provider: "deepseek", modelId, model: deepseek(modelId) }
+  return {
+    provider: "deepseek",
+    modelId,
+    model: deepseek(modelId),
+    // DeepSeek's current models answer in "thinking mode", which rejects
+    // `tool_choice: "required"` ("Thinking mode does not support this
+    // tool_choice"). Tools still work under "auto". Conservative for the whole
+    // provider: a wrong `true` breaks the run, a wrong `false` only loses the
+    // hard guarantee.
+    capabilities: { supportsForcedToolChoice: false },
+  }
 }
 
 function buildProvider(provider: ProviderId, purpose: ModelPurpose): ResolvedModel {
