@@ -1,6 +1,6 @@
-import { task } from "@trigger.dev/sdk/v3";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { task, metadata, logger } from "@trigger.dev/sdk/v3";
 import { generateText, tool } from "ai";
+import { runWithProvider } from "@/lib/orchestrator/llm";
 import { z } from "zod";
 import { LiveObject } from "@liveblocks/client";
 import type { LiveblocksNode, LiveblocksEdge } from "@liveblocks/react-flow";
@@ -158,7 +158,6 @@ export const designAgent = task({
   retry: { maxAttempts: 2 },
   run: async (payload: { prompt: string; roomId: string; userId: string }) => {
     const lb = getLiveblocks();
-    const google = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY });
 
     await lb
       .setPresence(payload.roomId, {
@@ -192,13 +191,24 @@ export const designAgent = task({
         // No storage yet — treat as empty
       }
 
-      const result = await generateText({
-        model: google(process.env.GEMINI_MODEL ?? "gemini-flash-latest"),
-        system: buildSystemPrompt(),
-        prompt: `User request: ${payload.prompt}\n\n${canvasContext}`,
-        tools: canvasTools,
-        toolChoice: "required",
-      });
+      // Provider comes from the LLM seam (LLM_PROVIDER); this task stays
+      // provider-agnostic. Tool-calling is required, so the model object is
+      // used directly rather than the text-only AgentModel interface.
+      const { value: result, used, fallback } = await runWithProvider((m) =>
+        generateText({
+          model: m.model,
+          system: buildSystemPrompt(),
+          prompt: `User request: ${payload.prompt}\n\n${canvasContext}`,
+          tools: canvasTools,
+          toolChoice: "required",
+        })
+      );
+
+      metadata.set("llm", { provider: used.provider, model: used.modelId });
+      if (fallback) {
+        metadata.set("llmFallback", fallback);
+        logger.warn("LLM provider fallback", fallback);
+      }
 
       const toolCalls = result.steps.flatMap((s) => s.toolCalls) as ToolCall[];
       const actionCalls = toolCalls.filter((c) => c.toolName !== "finalizeDesign");

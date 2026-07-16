@@ -1,6 +1,6 @@
 import { schemaTask, metadata, logger } from "@trigger.dev/sdk/v3"
-import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import { generateText } from "ai"
+import { runWithProvider } from "@/lib/orchestrator/llm"
 import { z } from "zod"
 import { put } from "@vercel/blob"
 import { prisma } from "@/lib/prisma"
@@ -98,8 +98,6 @@ export const generateSpec = schemaTask({
   schema: payloadSchema,
   retry: { maxAttempts: 2, minTimeoutInMs: 1000, maxTimeoutInMs: 10000, factor: 2 },
   run: async (payload) => {
-    const google = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY })
-
     metadata.set("status", "starting")
     logger.info("Generating spec", {
       projectId: payload.projectId,
@@ -111,11 +109,17 @@ export const generateSpec = schemaTask({
 
     const context = buildContext(payload.nodes, payload.edges, payload.chatHistory)
 
-    const result = await generateText({
-      model: google(process.env.GEMINI_SPEC_MODEL ?? process.env.GEMINI_MODEL ?? "gemini-flash-latest"),
-      system: SYSTEM_PROMPT,
-      prompt: context,
-    })
+    // Provider comes from the LLM seam (LLM_PROVIDER); this task is provider-agnostic.
+    const { value: result, used, fallback } = await runWithProvider(
+      (m) => generateText({ model: m.model, system: SYSTEM_PROMPT, prompt: context }),
+      { purpose: "spec" }
+    )
+
+    metadata.set("llm", { provider: used.provider, model: used.modelId })
+    if (fallback) {
+      metadata.set("llmFallback", fallback)
+      logger.warn("LLM provider fallback", fallback)
+    }
 
     const spec = result.text
 
