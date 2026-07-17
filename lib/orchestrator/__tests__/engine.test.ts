@@ -10,6 +10,7 @@ import {
   type ClarificationQuestion,
   type RunRecorder,
 } from "../engine"
+import { buildPlan } from "../planner"
 import type { Plan, PlanStep } from "../types"
 
 const PROJECT = "proj_engine"
@@ -93,7 +94,11 @@ const requirementsEnvelope = JSON.stringify({
   },
 })
 
-/** Mock invoker: per-agent FIFO of canned raw outputs; records every prompt. */
+/**
+ * Mock invoker: per-agent FIFO of canned raw outputs; records every prompt.
+ * A response of the form "__THROW__:message" makes the invocation throw, to
+ * simulate a network / LLM API failure.
+ */
 class MockInvoker implements AgentInvoker {
   prompts: Array<{ agent: string; prompt: string }> = []
   constructor(private readonly responses: Record<string, string[]>) {}
@@ -102,7 +107,11 @@ class MockInvoker implements AgentInvoker {
     this.prompts.push({ agent: step.agent, prompt })
     const queue = this.responses[step.agent]
     if (!queue || queue.length === 0) throw new Error(`No canned response left for ${step.agent}`)
-    return queue.shift() as string
+    const next = queue.shift() as string
+    if (next.startsWith("__THROW__")) {
+      throw new Error(next.slice("__THROW__:".length) || "invocation failed")
+    }
+    return next
   }
 
   async invokeGroup(calls: Array<{ step: PlanStep; prompt: string }>): Promise<string[]> {
@@ -213,6 +222,87 @@ describe("OrchestrationEngine", () => {
     const document = await store.getMemory(PROJECT)
     expect(document?.runState.sectionStatus.requirements).toBe("blocked")
     expect(document?.runState.phase).toBe("DONE")
+  })
+
+  describe("agent invocation errors never abort the run", () => {
+    const THROW = "__THROW__:AI_APICallError: Failed to process successful response"
+
+    it("blocks the step (not the run) when an agent's LLM call keeps failing", async () => {
+      const invoker = new MockInvoker({
+        // analyst throws on both the call and its transient retry.
+        "business/analyst": [THROW, THROW],
+        "business/requirements": [requirementsEnvelope],
+      })
+      const engine = new OrchestrationEngine({ store, invoker, recorder })
+
+      const summary = await engine.run(PROJECT, plan)
+
+      // The run finished instead of throwing; the analyst section is blocked.
+      const analyst = summary.stepResults.find((r) => r.agent === "business/analyst")
+      expect(analyst?.outcome).toBe("blocked")
+      expect(analyst?.errors?.[0].rule).toBe("agent-invocation-error")
+      expect(summary.blockages.some((b) => b.section === "project")).toBe(true)
+      const document = await store.getMemory(PROJECT)
+      expect(document?.runState.sectionStatus.project).toBe("blocked")
+    })
+
+    it("recovers when the transient retry succeeds", async () => {
+      const invoker = new MockInvoker({
+        // first call throws, retry succeeds.
+        "business/analyst": [THROW, analystEnvelope],
+        "business/requirements": [requirementsEnvelope],
+      })
+      const engine = new OrchestrationEngine({ store, invoker, recorder })
+
+      const summary = await engine.run(PROJECT, plan)
+
+      const analyst = summary.stepResults.find((r) => r.agent === "business/analyst")
+      expect(analyst?.outcome).toBe("committed")
+      expect(summary.status).toBe("DONE")
+    })
+
+    it("a batch failure degrades to per-step: one throwing agent blocks only its section", async () => {
+      // REQUIREMENTS parallel group A: domain_expert throws, requirements is fine.
+      const plthan = buildPlan("NEW_PROJECT", "run_batch")
+      if (!plthan.ok) throw new Error("plan failed")
+
+      const invoker = new MockInvoker({
+        "business/analyst": [analystEnvelope],
+        "business/domain_expert": [THROW, THROW, THROW, THROW],
+        "business/requirements": [requirementsEnvelope, requirementsEnvelope],
+        "business/user_story": [
+          JSON.stringify({
+            agent: "business/user_story",
+            version: 1,
+            status: "ok",
+            writes: {
+              userStories: [
+                {
+                  id: "US-001",
+                  epic: "EPIC-01",
+                  story: "As a Seller, I want to publish, so buyers find it.",
+                  actor: "ACT-Seller",
+                  requirements: ["REQ-F-001"],
+                  scenarios: [{ name: "ok", given: "a", when: "b", then: "c" }],
+                  points: 3,
+                },
+              ],
+            },
+          }),
+        ],
+      })
+      // Stop the run after REQUIREMENTS by only allowing the business phases.
+      const businessPlan = { ...plthan.plan, steps: plthan.plan.steps.filter((s) => ["INTAKE", "CLARIFICATION", "REQUIREMENTS"].includes(s.phase)) }
+      const engine = new OrchestrationEngine({ store, invoker, recorder })
+
+      const summary = await engine.run(PROJECT, businessPlan)
+
+      // The run did not abort; domain_expert is blocked, requirements committed.
+      const de = summary.stepResults.find((r) => r.agent === "business/domain_expert")
+      const req = summary.stepResults.find((r) => r.agent === "business/requirements")
+      expect(de?.outcome).toBe("blocked")
+      expect(req?.outcome).toBe("committed")
+    })
   })
 
   describe("consistency gate (AC3)", () => {

@@ -108,6 +108,18 @@ interface ClarificationItem {
   answer?: string | null
 }
 
+/** Turns a thrown agent invocation into a blocking validation error. */
+function invocationError(error: unknown): ValidationError {
+  const message = (error instanceof Error ? error.message : String(error)).split("\n")[0].slice(0, 200)
+  return {
+    level: 3,
+    section: "(invocation)",
+    path: "/",
+    rule: "agent-invocation-error",
+    message: `Agent invocation failed: ${message}`,
+  }
+}
+
 /**
  * workflow.md § Clarification Loop allows up to 2 rounds; V1 runs a single
  * round and converts whatever stays unanswered into assumptions. That is
@@ -163,7 +175,7 @@ export class OrchestrationEngine {
             for (const section of step?.writes ?? []) {
               blockages.push({
                 section,
-                reason: `Step ${result.stepId} (${result.agent}) failed twice: ${result.errors?.[0]?.message ?? "unknown"}`,
+                reason: `Step ${result.stepId} (${result.agent}) blocked: ${result.errors?.[0]?.message ?? "unknown"}`,
               })
             }
           }
@@ -205,12 +217,27 @@ export class OrchestrationEngine {
     step: PlanStep,
     previousErrors?: ValidationError[]
   ): Promise<StepResult> {
-    const { store, invoker } = this.deps
+    const { store } = this.deps
     const attempt = previousErrors ? 2 : 1
 
     const slice = (await store.getSections(projectId, step.reads)) ?? {}
     const prompt = assemblePrompt(step, slice, previousErrors)
-    const raw = await invoker.invoke(step, prompt)
+
+    // A thrown invocation (network / LLM API error) is not the agent's fault
+    // and must never abort the run: retry the raw call once, then block this
+    // step and let the run continue (orchestrator.md prime directive 5).
+    let raw: string
+    try {
+      raw = await this.invokeWithRetry(step, prompt)
+    } catch (error) {
+      return {
+        stepId: step.id,
+        agent: step.agent,
+        outcome: "blocked",
+        attempts: attempt,
+        errors: [invocationError(error)],
+      }
+    }
 
     const errors = await this.validateAndCommit(projectId, runId, step, raw)
     if (errors.length === 0) {
@@ -220,6 +247,15 @@ export class OrchestrationEngine {
       return this.executeStep(projectId, runId, step, errors)
     }
     return { stepId: step.id, agent: step.agent, outcome: "blocked", attempts: 2, errors }
+  }
+
+  /** One transient-retry of the raw invocation. Rethrows if the second call also fails. */
+  private async invokeWithRetry(step: PlanStep, prompt: string): Promise<string> {
+    try {
+      return await this.deps.invoker.invoke(step, prompt)
+    } catch {
+      return await this.deps.invoker.invoke(step, prompt)
+    }
   }
 
   private async executeGroup(
@@ -239,7 +275,20 @@ export class OrchestrationEngine {
       calls.push({ step, prompt: assemblePrompt(step, slice) })
     }
 
-    const raws = await invoker.invokeGroup(calls)
+    let raws: string[]
+    try {
+      raws = await invoker.invokeGroup(calls)
+    } catch {
+      // The batch failed as a whole (the adapter throws if any member fails).
+      // Degrade to per-step execution so one agent's API error blocks only its
+      // own section instead of aborting every step in the group.
+      const degraded: StepResult[] = []
+      for (const step of steps) {
+        degraded.push(await this.executeStep(projectId, runId, step))
+      }
+      return degraded
+    }
+
     const results: StepResult[] = []
     for (const [index, step] of steps.entries()) {
       const errors = await this.validateAndCommit(projectId, runId, step, raws[index])
