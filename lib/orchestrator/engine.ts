@@ -8,14 +8,17 @@
  * - one semantic retry with the validation errors appended; second failure
  *   marks the step's sections `blocked` and the run continues (orchestrator.md
  *   prime directive 5);
- * - CLARIFICATION runs only when unanswered blocking clarifications exist
- *   (Phase 2: with none, the phase auto-passes; the interactive pause ships
- *   in Phase 3);
+ * - CLARIFICATION pauses the run through the ClarificationGate when blocking
+ *   questions are unanswered (max 2 rounds, workflow.md); leftover
+ *   non-blocking questions become recorded assumptions rather than silent gaps;
  * - after each phase, surviving draft sections written in that phase flip to
- *   `valid` (structural gate — the business gates arrive with each team).
+ *   `valid` (structural gate), then the phase's consistency rules run and any
+ *   finding is routed back to its owning agent for one corrective re-run
+ *   (rules/consistency.md § Enforcement) — the engine never patches content.
  */
 import type { MemoryStore } from "../memory/store"
 import type { SectionStatus, ValidationError } from "../memory/types"
+import { checkBusinessConsistency, type ConsistencyFinding } from "./consistency"
 import { checkEnvelopeAgainstStep, envelopeWrites, parseEnvelope } from "./envelope"
 import { assemblePrompt } from "./prompt"
 import { AGENT_PHASES, type Plan, type PlanStep, type RunSummary, type StepResult } from "./types"
@@ -27,11 +30,40 @@ export interface AgentInvoker {
   invokeGroup(calls: Array<{ step: PlanStep; prompt: string }>): Promise<string[]>
 }
 
+export interface ClarificationQuestion {
+  id: string
+  question: string
+  why: string
+  suggestedDefault?: string | null
+}
+
+export interface ClarificationAnswer {
+  id: string
+  answer: string
+}
+
+/**
+ * Human-in-the-loop port: the only place the pipeline waits for a person.
+ * Production suspends the run on a Trigger.dev waitpoint; tests answer inline.
+ * Returning fewer answers than questions is allowed — whatever is left
+ * unanswered becomes an assumption.
+ */
+export interface ClarificationGate {
+  requestAnswers(request: {
+    projectId: string
+    runId: string
+    questions: ClarificationQuestion[]
+  }): Promise<ClarificationAnswer[]>
+}
+
+/** Run status mirrors the Prisma RunStatus enum. */
+export type RunStatusValue = "RUNNING" | "WAITING_CLARIFICATION" | "DONE" | "FAILED"
+
 /** Run bookkeeping port (Run row); the memory document stays the contract truth. */
 export interface RunRecorder {
   update(fields: {
     phase?: string
-    status?: "RUNNING" | "DONE" | "FAILED"
+    status?: RunStatusValue
     blockages?: Array<{ section: string; reason: string }>
   }): Promise<void>
 }
@@ -40,12 +72,25 @@ interface EngineDeps {
   store: MemoryStore
   invoker: AgentInvoker
   recorder: RunRecorder
+  /** Optional: without it, CLARIFICATION cannot pause and questions become assumptions. */
+  clarificationGate?: ClarificationGate
 }
 
 interface ClarificationItem {
+  id?: string
+  question?: string
+  why?: string
   blocking?: boolean
+  suggestedDefault?: string | null
   answer?: string | null
 }
+
+/**
+ * workflow.md § Clarification Loop allows up to 2 rounds; V1 runs a single
+ * round and converts whatever stays unanswered into assumptions. That is
+ * within the contract (≤ 2) and guarantees termination; a second round is a
+ * refinement, not a requirement.
+ */
 
 export class OrchestrationEngine {
   constructor(private readonly deps: EngineDeps) {}
@@ -59,8 +104,11 @@ export class OrchestrationEngine {
       const phaseSteps = plan.steps.filter((step) => step.phase === phase)
       if (phaseSteps.length === 0) continue
 
-      if (phase === "CLARIFICATION" && !(await this.hasBlockingClarifications(projectId))) {
-        continue
+      if (phase === "CLARIFICATION") {
+        const answered = await this.resolveClarifications(projectId, plan.runId)
+        // Nothing blocking was pending (or nobody could answer): the analyst
+        // has no answers to integrate, so the phase has no work to do.
+        if (!answered) continue
       }
 
       await this.advancePhase(projectId, phase)
@@ -100,6 +148,16 @@ export class OrchestrationEngine {
       }
 
       await this.closePhaseGate(projectId, phaseSteps, stepResults)
+
+      // Cross-artifact gate: findings go back to their owning agent for one
+      // corrective re-run; unresolved ones are reported, never patched here.
+      const findings = await this.runConsistencyGate(projectId, plan, phase, stepResults)
+      for (const finding of findings) {
+        blockages.push({
+          section: finding.sections[0] ?? "(consistency)",
+          reason: `${finding.rule}: ${finding.detail}`,
+        })
+      }
     }
 
     await this.advancePhase(projectId, "VALIDATION")
@@ -206,10 +264,167 @@ export class OrchestrationEngine {
     return result.ok ? [] : (result.errors ?? [])
   }
 
-  private async hasBlockingClarifications(projectId: string): Promise<boolean> {
-    const slice = await this.deps.store.getSections(projectId, ["clarifications"])
+  /**
+   * The clarification loop (workflow.md). Asks the user through the gate,
+   * commits the answers, and turns whatever stays unanswered into recorded
+   * assumptions. Returns true when answers arrived and the analyst has
+   * something to integrate.
+   *
+   * The orchestrator commits answers because it is the only committer — it
+   * transmits the user's words, it does not author content.
+   */
+  private async resolveClarifications(projectId: string, runId: string): Promise<boolean> {
+    const { store, clarificationGate, recorder } = this.deps
+
+    const slice = await store.getSections(projectId, ["clarifications"])
     const items = (slice?.clarifications ?? []) as ClarificationItem[]
-    return Array.isArray(items) && items.some((c) => c.blocking === true && !c.answer)
+    if (!Array.isArray(items) || items.length === 0) return false
+
+    const pendingBlocking = items.filter((c) => c.blocking === true && !c.answer && c.id)
+    let answeredAny = false
+
+    if (pendingBlocking.length > 0 && clarificationGate) {
+      await recorder.update({ status: "WAITING_CLARIFICATION" })
+
+      const answers = await clarificationGate.requestAnswers({
+        projectId,
+        runId,
+        questions: pendingBlocking.map((c) => ({
+          id: c.id as string,
+          question: c.question ?? "",
+          why: c.why ?? "",
+          suggestedDefault: c.suggestedDefault ?? null,
+        })),
+      })
+
+      await recorder.update({ status: "RUNNING" })
+
+      const byId = new Map(answers.filter((a) => a.answer?.trim()).map((a) => [a.id, a.answer]))
+      if (byId.size > 0) {
+        const updated = items.map((c) =>
+          c.id && byId.has(c.id) ? { ...c, answer: byId.get(c.id) } : c
+        )
+        await store.commitSection(
+          projectId,
+          { agentId: "orchestrator", runId },
+          { clarifications: updated },
+          { preserveStatus: true }
+        )
+        answeredAny = true
+      }
+    }
+
+    await this.recordUnansweredAsAssumptions(projectId, runId)
+    return answeredAny
+  }
+
+  /**
+   * Unanswered questions never vanish: they become explicit assumptions the
+   * user can challenge (workflow.md § Clarification Loop).
+   */
+  private async recordUnansweredAsAssumptions(projectId: string, runId: string): Promise<void> {
+    const { store } = this.deps
+    const slice = await store.getSections(projectId, ["clarifications", "project"])
+    const items = (slice?.clarifications ?? []) as ClarificationItem[]
+    if (!Array.isArray(items)) return
+
+    const unanswered = items.filter((c) => !c.answer && c.id)
+    if (unanswered.length === 0) return
+
+    const project = (slice?.project ?? {}) as Record<string, unknown>
+    const existing = Array.isArray(project.assumptions)
+      ? (project.assumptions as Array<{ fromClarification?: string }>)
+      : []
+    const alreadyRecorded = new Set(existing.map((a) => a.fromClarification).filter(Boolean))
+
+    const additions = unanswered
+      .filter((c) => !alreadyRecorded.has(c.id))
+      .map((c, index) => ({
+        id: `ASM-${String(existing.length + index + 1).padStart(3, "0")}`,
+        statement: c.suggestedDefault
+          ? `${c.question} → assumed: ${c.suggestedDefault}`
+          : `${c.question} → left open; proceeding without an answer.`,
+        source: "unansweredClarification" as const,
+        fromClarification: c.id as string,
+      }))
+    if (additions.length === 0) return
+
+    await store.commitSection(
+      projectId,
+      { agentId: "orchestrator", runId },
+      { project: { ...project, assumptions: [...existing, ...additions] } },
+      { preserveStatus: true }
+    )
+  }
+
+  /**
+   * Runs the phase's consistency rules and gives the owning agent exactly one
+   * chance to fix its own output. Returns the findings that survived.
+   */
+  private async runConsistencyGate(
+    projectId: string,
+    plan: Plan,
+    phase: string,
+    stepResults: StepResult[]
+  ): Promise<ConsistencyFinding[]> {
+    if (phase !== "REQUIREMENTS") return [] // later phases register their own rules
+
+    // Only enforce rules the plan actually undertook: a finding routed to an
+    // agent this run never scheduled is about work nobody asked for.
+    const plannedAgents = new Set(plan.steps.map((s) => s.agent))
+    const findings = (await this.checkPhaseConsistency(projectId)).filter((f) =>
+      plannedAgents.has(f.routedTo)
+    )
+    if (findings.length === 0) return []
+
+    // One corrective re-run per agent, carrying all of its findings at once —
+    // the same "here is everything that is wrong, fix exactly this" contract as
+    // a validation retry (response_rules.md rule 13).
+    const byAgent = new Map<string, ConsistencyFinding[]>()
+    for (const finding of findings) {
+      byAgent.set(finding.routedTo, [...(byAgent.get(finding.routedTo) ?? []), finding])
+    }
+
+    for (const [agent, agentFindings] of byAgent) {
+      const step = plan.steps.find((s) => s.agent === agent && s.phase === phase)
+      if (!step) continue
+
+      const result = await this.executeStep(
+        projectId,
+        plan.runId,
+        step,
+        agentFindings.map((f) => ({
+          level: 3 as const,
+          section: f.sections[0] ?? "(consistency)",
+          path: "/",
+          rule: f.rule,
+          message: f.detail,
+        }))
+      )
+      stepResults.push({
+        ...result,
+        stepId: `${result.stepId}#${agentFindings.map((f) => f.rule).join("+")}`,
+      })
+    }
+
+    // Re-check: only what the corrective re-run failed to fix is a real finding.
+    return (await this.checkPhaseConsistency(projectId)).filter((f) =>
+      plannedAgents.has(f.routedTo)
+    )
+  }
+
+  private async checkPhaseConsistency(projectId: string): Promise<ConsistencyFinding[]> {
+    const slice = await this.deps.store.getSections(projectId, [
+      "requirements",
+      "userStories",
+      "actors",
+    ])
+    if (!slice) return []
+    return checkBusinessConsistency({
+      requirements: slice.requirements,
+      userStories: slice.userStories,
+      actors: slice.actors,
+    })
   }
 
   /** Structural gate: draft sections written in this phase (and not blocked) become valid. */

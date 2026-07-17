@@ -104,11 +104,18 @@ export class MemoryStore {
   /**
    * Validates and commits an agent's proposed writes. Atomic: any failure
    * (ownership, schema, uniqueness, version conflict) leaves memory untouched.
+   *
+   * `preserveStatus` keeps each written section's current lifecycle status
+   * instead of resetting it to `draft`. It exists for the Orchestrator's
+   * bookkeeping writes — recording a user's clarification answer or an
+   * assumption transmits information into an already gate-validated section;
+   * it is not new agent content, so it must not demote `valid` back to `draft`.
    */
   async commitSection(
     projectId: string,
     meta: CommitMeta,
-    writes: SectionWrites
+    writes: SectionWrites,
+    options: { preserveStatus?: boolean } = {}
   ): Promise<CommitResult> {
     const loaded = await this.persistence.load(projectId)
     if (!loaded) {
@@ -156,9 +163,11 @@ export class MemoryStore {
     const nextVersion = loaded.version + 1
     draft.memoryVersion = nextVersion
 
-    // Status lifecycle: written sections become draft (runState itself has no status).
+    // Status lifecycle: written sections become draft (runState itself has no
+    // status). Orchestrator bookkeeping writes keep the existing status.
     for (const key of writeKeys) {
       if (key === "runState") continue
+      if (options.preserveStatus && draft.runState.sectionStatus[key]) continue
       draft.runState.sectionStatus[key] = "draft"
     }
     draft.runState.history = [
