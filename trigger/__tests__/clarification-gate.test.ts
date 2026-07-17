@@ -6,13 +6,9 @@ import type {
   RunRecorder,
 } from "@/lib/orchestrator/engine"
 
-import {
-  parseDuration,
-  TriggerClarificationGate,
-  validateResumePayload,
-  type ClarificationResumePayload,
-  type WaitpointApi,
-} from "../clarification-gate"
+import type { ClarificationResumePayload } from "@/lib/orchestrator/clarification"
+
+import { TriggerClarificationGate, type WaitpointApi } from "../clarification-gate"
 
 const QUESTIONS: ClarificationQuestion[] = [
   { id: "CLR-001", question: "Multiple warehouses?", why: "Inventory model", suggestedDefault: "Single" },
@@ -69,73 +65,6 @@ function gateWith(waitpoint: WaitpointApi, recorder: RunRecorder) {
     now: () => new Date("2026-07-17T12:00:00.000Z"),
   })
 }
-
-describe("validateResumePayload", () => {
-  it("accepts well-formed answers for expected questions", () => {
-    const { answers, rejected } = validateResumePayload(
-      { answers: [{ id: "CLR-001", answer: "  Multiple  " }] },
-      QUESTIONS
-    )
-    expect(answers).toEqual([{ id: "CLR-001", answer: "Multiple" }])
-    expect(rejected).toEqual([])
-  })
-
-  it("rejects an unknown question id", () => {
-    const { answers, rejected } = validateResumePayload(
-      { answers: [{ id: "CLR-999", answer: "hi" }] },
-      QUESTIONS
-    )
-    expect(answers).toEqual([])
-    expect(rejected).toEqual([{ id: "CLR-999", reason: "unknown question id" }])
-  })
-
-  it("rejects malformed and empty answers", () => {
-    const { answers, rejected } = validateResumePayload(
-      { answers: [{ id: "CLR-001", answer: "" }, { id: "CLR-002", answer: 42 }] },
-      QUESTIONS
-    )
-    expect(answers).toEqual([])
-    expect(rejected).toHaveLength(2)
-    expect(rejected[0].reason).toMatch(/non-empty string/)
-  })
-
-  it("rejects a duplicate answer for the same question", () => {
-    const { answers, rejected } = validateResumePayload(
-      { answers: [{ id: "CLR-001", answer: "a" }, { id: "CLR-001", answer: "b" }] },
-      QUESTIONS
-    )
-    expect(answers).toHaveLength(1)
-    expect(rejected).toEqual([{ id: "CLR-001", reason: "duplicate answer" }])
-  })
-
-  it("rejects an empty or malformed payload", () => {
-    expect(validateResumePayload({}, QUESTIONS).rejected[0].reason).toMatch(/missing or malformed/)
-    expect(validateResumePayload(undefined, QUESTIONS).rejected[0].reason).toMatch(/missing or malformed/)
-    expect(validateResumePayload({ answers: [] }, QUESTIONS)).toEqual({ answers: [], rejected: [] })
-  })
-
-  it("keeps only expected questions when the payload mixes good and bad", () => {
-    const { answers, rejected } = validateResumePayload(
-      { answers: [{ id: "CLR-001", answer: "ok" }, { id: "CLR-404", answer: "nope" }] },
-      QUESTIONS
-    )
-    expect(answers).toEqual([{ id: "CLR-001", answer: "ok" }])
-    expect(rejected).toHaveLength(1)
-  })
-})
-
-describe("parseDuration", () => {
-  it("understands the durations Trigger accepts", () => {
-    expect(parseDuration("30s")).toBe(30_000)
-    expect(parseDuration("10m")).toBe(600_000)
-    expect(parseDuration("24h")).toBe(86_400_000)
-    expect(parseDuration("2d")).toBe(172_800_000)
-  })
-
-  it("refuses an unsupported format rather than guessing", () => {
-    expect(() => parseDuration("soon")).toThrow(/Unsupported clarification timeout/)
-  })
-})
 
 describe("TriggerClarificationGate", () => {
   let recorder: MockRecorder

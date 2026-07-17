@@ -21,14 +21,14 @@ import type {
   ClarificationRunState,
   RunRecorder,
 } from "@/lib/orchestrator/engine"
+import {
+  parseDuration,
+  validateResumePayload,
+  type ClarificationResumePayload,
+} from "@/lib/orchestrator/clarification"
 
 /** How long a user has to answer before the questions become assumptions. */
 export const CLARIFICATION_TIMEOUT = "24h"
-
-/** What the V3 answers route sends through wait.completeToken(). */
-export interface ClarificationResumePayload {
-  answers: Array<{ id: string; answer: string }>
-}
 
 /** Minimal slice of the Trigger waitpoint API — injected so the adapter is unit-testable. */
 export interface WaitpointApi {
@@ -48,55 +48,6 @@ const realWaitpointApi: WaitpointApi = {
   forToken: <T>(id: string) => wait.forToken<T>(id) as Promise<
     { ok: true; output: T } | { ok: false; error: Error }
   >,
-}
-
-export interface PayloadValidation {
-  answers: ClarificationAnswer[]
-  /** Ids that were rejected, with why — surfaced to the caller, never silently dropped. */
-  rejected: Array<{ id: string; reason: string }>
-}
-
-/**
- * Validates a resume payload against the questions actually asked. Pure.
- * Answers for unknown ids, or that are not non-empty strings, are rejected —
- * the payload is limited to what this waitpoint expects.
- */
-export function validateResumePayload(
-  payload: unknown,
-  questions: ClarificationQuestion[]
-): PayloadValidation {
-  const expected = new Set(questions.map((q) => q.id))
-  const rejected: Array<{ id: string; reason: string }> = []
-
-  const raw = (payload as ClarificationResumePayload | undefined)?.answers
-  if (!Array.isArray(raw)) {
-    return { answers: [], rejected: [{ id: "(payload)", reason: "missing or malformed `answers` array" }] }
-  }
-
-  const answers: ClarificationAnswer[] = []
-  const seen = new Set<string>()
-
-  for (const item of raw) {
-    const id = (item as { id?: unknown })?.id
-    const answer = (item as { answer?: unknown })?.answer
-
-    if (typeof id !== "string" || !expected.has(id)) {
-      rejected.push({ id: typeof id === "string" ? id : "(no id)", reason: "unknown question id" })
-      continue
-    }
-    if (seen.has(id)) {
-      rejected.push({ id, reason: "duplicate answer" })
-      continue
-    }
-    if (typeof answer !== "string" || answer.trim() === "") {
-      rejected.push({ id, reason: "answer must be a non-empty string" })
-      continue
-    }
-    seen.add(id)
-    answers.push({ id, answer: answer.trim() })
-  }
-
-  return { answers, rejected }
 }
 
 export interface TriggerClarificationGateDeps {
@@ -180,13 +131,4 @@ export class TriggerClarificationGate implements ClarificationGate {
 
 function isTimeout(error: Error): boolean {
   return error instanceof WaitpointTimeoutError || /timeout|timed out/i.test(error.message ?? "")
-}
-
-/** Supports the duration strings Trigger accepts for `timeout` (e.g. "24h", "30m"). */
-export function parseDuration(value: string): number {
-  const match = /^(\d+)\s*(s|m|h|d)$/.exec(value.trim())
-  if (!match) throw new Error(`Unsupported clarification timeout: "${value}" (use e.g. "24h").`)
-  const amount = Number(match[1])
-  const unit = { s: 1_000, m: 60_000, h: 3_600_000, d: 86_400_000 }[match[2] as "s" | "m" | "h" | "d"]
-  return amount * unit
 }
