@@ -107,9 +107,13 @@ model MemoryRevision {
 
 // ─── Orchestrator runtime (Phase 2) ──────────────────────────────────────────
 
+/// DONE is the canonical "completed" state. A run that finished with blocked
+/// sections is DONE with a non-empty `blockages` — the run is not blocked, its
+/// sections are (orchestrator.md prime directive 5), so there is no BLOCKED status.
 enum RunStatus {
   RUNNING
   WAITING_CLARIFICATION
+  RESUMING
   DONE
   FAILED
 }
@@ -120,9 +124,15 @@ model Run {
   userId       String
   intent       String
   phase        String
+  /// Step the run is currently on — lets a resumed run be traced to its exact place.
+  stepId       String?
   status       RunStatus @default(RUNNING)
   plan         Json
   blockages    Json?
+  /// Clarification waitpoint state: token id, asked question ids, expiry and
+  /// suspend/resume timestamps. Question *text* stays in Shared Memory (single
+  /// source of truth); only references are duplicated here.
+  clarification Json?
   triggerRunId String?   @unique
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

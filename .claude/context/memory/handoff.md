@@ -8,7 +8,13 @@
 
 ---
 
-## Session en cours (2026-07-17) — socle LIVE validé, Phase 3 débloquée
+## Session en cours (2026-07-17) — Phase 3 en cours (V1+V2 faits)
+
+- **V1 (moteur)** `d0b7aec` : port `ClarificationGate`, boucle de clarification 1 tour (non-répondu → hypothèses), `consistency.ts` (CON-01/02) + gate correctif (re-run de l'agent propriétaire, groupé par agent), `preserveStatus` sur `commitSection`.
+- **V2 (adaptateur waitpoint)** : pause/reprise = **waitpoint tokens Trigger.dev v4** (`createToken`/`forToken`/`completeToken`/`retrieveToken`, vérifiés sur SDK 4.5.3 installé). `trigger/clarification-gate.ts` implémente le port, **zéro logique métier** ; le moteur reste sans dépendance Trigger (mock V1 toujours utilisé). Statut **`RESUMING`** ajouté ; `Run.stepId` + `Run.clarification` (migration `20260717120633`). Idempotence = 1 token/run (`clarification:<runId>`, `isCached` au rejeu). Expiration **24 h** = « personne n'a répondu → hypothèses » ; toute autre erreur waitpoint est technique et relancée (jamais convertie en hypothèse). 126 tests.
+- **Prochaine étape : V3 — routes API** (`POST /api/ai/run`, token public du run, `POST /api/ai/run/answers`). La route answers réutilise `validateResumePayload` (exportée, pure), vérifie l'ownership, `Run.status === WAITING_CLARIFICATION`, `retrieveToken().status`, puis `completeToken` — **elle ne commite pas** les réponses (c'est le moteur qui reprend et commite). **Démo cloud suspend→answer→resume à faire à la clôture de V3** (V2+V3 ensemble).
+
+## Session précédente (socle LIVE validé, Phase 3 débloquée)
 
 - **Les 3 smoke tests du socle sont VERTS en production**, sur **Gemini ET DeepSeek** : `agent-runner`, `design-agent` (persistance Liveblocks vérifiée), `generate-spec` (Blob + record Prisma). Chaîne complète prouvée : Clerk → Prisma → Liveblocks → Trigger prod → LLM → Blob.
 - **DeepSeek** est un provider sélectionnable (`LLM_PROVIDER=deepseek`), **Gemini reste le défaut**. Bascule sans changement de code, dans les deux sens.

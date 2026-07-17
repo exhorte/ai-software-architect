@@ -1,9 +1,17 @@
-import { task } from "@trigger.dev/sdk/v3"
+import { task, metadata } from "@trigger.dev/sdk/v3"
 
+import { Prisma } from "@/app/generated/prisma/client"
 import { prisma } from "@/lib/prisma"
 import { MemoryStore } from "@/lib/memory/store"
 import { PrismaPersistence } from "@/lib/memory/prisma-adapter"
-import { OrchestrationEngine, type AgentInvoker, type RunRecorder } from "@/lib/orchestrator/engine"
+import {
+  OrchestrationEngine,
+  type AgentInvoker,
+  type ClarificationRunState,
+  type RunRecorder,
+  type RunStatusValue,
+} from "@/lib/orchestrator/engine"
+import { TriggerClarificationGate } from "./clarification-gate"
 import { buildPlan, classifyIntent } from "@/lib/orchestrator/planner"
 import type { PlanStep } from "@/lib/orchestrator/types"
 import { agentRunner } from "./agent-runner"
@@ -40,22 +48,50 @@ class TriggerAgentInvoker implements AgentInvoker {
   }
 }
 
+/**
+ * Persists run bookkeeping to the Run row and mirrors it into Trigger run
+ * metadata so the UI can follow along. Carries no business logic and no secret:
+ * the waitpoint token id is an opaque handle, never a credential.
+ */
 class PrismaRunRecorder implements RunRecorder {
   constructor(private readonly runRowId: string) {}
 
   async update(fields: {
     phase?: string
-    status?: "RUNNING" | "DONE" | "FAILED"
+    stepId?: string
+    status?: RunStatusValue
     blockages?: Array<{ section: string; reason: string }>
+    clarification?: ClarificationRunState | null
   }): Promise<void> {
     await prisma.run.update({
       where: { id: this.runRowId },
       data: {
         ...(fields.phase ? { phase: fields.phase } : {}),
+        ...(fields.stepId ? { stepId: fields.stepId } : {}),
         ...(fields.status ? { status: fields.status } : {}),
-        ...(fields.blockages ? { blockages: fields.blockages } : {}),
+        ...(fields.blockages
+          ? { blockages: fields.blockages as unknown as Prisma.InputJsonValue }
+          : {}),
+        ...(fields.clarification !== undefined
+          ? {
+              clarification: (fields.clarification ??
+                Prisma.DbNull) as unknown as Prisma.InputJsonValue,
+            }
+          : {}),
       },
     })
+
+    if (fields.phase) metadata.set("phase", fields.phase)
+    if (fields.stepId) metadata.set("stepId", fields.stepId)
+    if (fields.status) metadata.set("status", fields.status)
+    if (fields.clarification) {
+      metadata.set("clarification", {
+        questionCount: fields.clarification.questionCount,
+        expiresAt: fields.clarification.expiresAt,
+        suspendedAt: fields.clarification.suspendedAt,
+        ...(fields.clarification.resumedAt ? { resumedAt: fields.clarification.resumedAt } : {}),
+      })
+    }
   }
 }
 
@@ -110,10 +146,17 @@ export const pipelineOrchestrator = task({
       data: { plan: JSON.parse(JSON.stringify(planResult.plan)) },
     })
 
+    const recorder = new PrismaRunRecorder(runRow.id)
     const engine = new OrchestrationEngine({
       store,
       invoker: new TriggerAgentInvoker(),
-      recorder: new PrismaRunRecorder(runRow.id),
+      recorder,
+      // The waitpoint adapter: the engine decides *when* to ask, this decides *how* to wait.
+      clarificationGate: new TriggerClarificationGate({
+        projectId: payload.projectId,
+        runId: runRow.id,
+        recorder,
+      }),
     })
 
     return engine.run(payload.projectId, planResult.plan)

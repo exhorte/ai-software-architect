@@ -56,15 +56,38 @@ export interface ClarificationGate {
   }): Promise<ClarificationAnswer[]>
 }
 
-/** Run status mirrors the Prisma RunStatus enum. */
-export type RunStatusValue = "RUNNING" | "WAITING_CLARIFICATION" | "DONE" | "FAILED"
+/**
+ * Run status mirrors the Prisma RunStatus enum. `DONE` is the canonical
+ * completed state; a run that ends with blocked sections is `DONE` with
+ * non-empty blockages — the sections are blocked, not the run.
+ */
+export type RunStatusValue =
+  | "RUNNING"
+  | "WAITING_CLARIFICATION"
+  | "RESUMING"
+  | "DONE"
+  | "FAILED"
+
+/** Waitpoint bookkeeping persisted on the Run row. Contains no secret. */
+export interface ClarificationRunState {
+  /** Waitpoint token id — an opaque handle, never a credential. */
+  tokenId: string
+  /** Ids of the questions actually asked; their text lives in Shared Memory. */
+  questionIds: string[]
+  questionCount: number
+  expiresAt: string
+  suspendedAt: string
+  resumedAt?: string
+}
 
 /** Run bookkeeping port (Run row); the memory document stays the contract truth. */
 export interface RunRecorder {
   update(fields: {
     phase?: string
+    stepId?: string
     status?: RunStatusValue
     blockages?: Array<{ section: string; reason: string }>
+    clarification?: ClarificationRunState | null
   }): Promise<void>
 }
 
