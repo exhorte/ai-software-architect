@@ -8,7 +8,15 @@
 
 ---
 
-## Session en cours
+## Session en cours (2026-07-17) — socle LIVE validé, Phase 3 débloquée
+
+- **Les 3 smoke tests du socle sont VERTS en production**, sur **Gemini ET DeepSeek** : `agent-runner`, `design-agent` (persistance Liveblocks vérifiée), `generate-spec` (Blob + record Prisma). Chaîne complète prouvée : Clerk → Prisma → Liveblocks → Trigger prod → LLM → Blob.
+- **DeepSeek** est un provider sélectionnable (`LLM_PROVIDER=deepseek`), **Gemini reste le défaut**. Bascule sans changement de code, dans les deux sens.
+- **Trigger.dev prod** : version `20260716.1` (4 tâches), 20 variables d'env (dont la config DeepSeek).
+- ⚠️ **Piège CLI Trigger** : épingler la CLI sur la version du SDK (`npx trigger.dev@4.5.3`) — `@latest` avorte sur « Version mismatch … in CI » sans TTY.
+- 🔧 **Dette connue** : `design-agent` génère des nœuds mais **0 edge** et n'appelle jamais `finalizeDesign` — **identique sur les deux providers** → faiblesse du prompt/schéma d'outils, pas du LLM. Détail : `project_state.md` § Known Debt.
+
+## Session précédente
 
 - **Date** : 2026-07-10
 - **Objectif** : Déploiement sur **Prisma Compute** + remise à neuf de la config Prisma/Clerk (demande utilisateur, avant d'entamer la Phase 3).

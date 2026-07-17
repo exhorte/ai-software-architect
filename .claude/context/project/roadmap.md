@@ -19,7 +19,7 @@
 | 5 | Engineering & Documentation Teams + export | `phases/phase-05-engineering-team.md` | ⬜ not started | 4 |
 | 6 | Advanced platform (multi-LLM, new workflows) | `phases/phase-06-advanced-platform.md` | ⬜ not started | 5 |
 
-**Current phase: 3 — Business Team end-to-end.**
+**Current phase: 3 — Business Team end-to-end.** Unblocked 2026-07-17: the inherited base is verified live end to end (Clerk → Prisma → Liveblocks → Trigger.dev prod → LLM → Blob), on both Gemini and DeepSeek.
 
 ## Phase Discipline
 
