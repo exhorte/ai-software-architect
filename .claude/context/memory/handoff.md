@@ -8,11 +8,15 @@
 
 ---
 
-## Session en cours (2026-07-17) — Phase 3 en cours (V1+V2 faits)
+## Session en cours (2026-07-17) — Phase 3 : V1+V2+V3 faits, démo cloud verte
 
 - **V1 (moteur)** `d0b7aec` : port `ClarificationGate`, boucle de clarification 1 tour (non-répondu → hypothèses), `consistency.ts` (CON-01/02) + gate correctif (re-run de l'agent propriétaire, groupé par agent), `preserveStatus` sur `commitSection`.
 - **V2 (adaptateur waitpoint)** : pause/reprise = **waitpoint tokens Trigger.dev v4** (`createToken`/`forToken`/`completeToken`/`retrieveToken`, vérifiés sur SDK 4.5.3 installé). `trigger/clarification-gate.ts` implémente le port, **zéro logique métier** ; le moteur reste sans dépendance Trigger (mock V1 toujours utilisé). Statut **`RESUMING`** ajouté ; `Run.stepId` + `Run.clarification` (migration `20260717120633`). Idempotence = 1 token/run (`clarification:<runId>`, `isCached` au rejeu). Expiration **24 h** = « personne n'a répondu → hypothèses » ; toute autre erreur waitpoint est technique et relancée (jamais convertie en hypothèse). 126 tests.
-- **Prochaine étape : V3 — routes API** (`POST /api/ai/run`, token public du run, `POST /api/ai/run/answers`). La route answers réutilise `validateResumePayload` (exportée, pure), vérifie l'ownership, `Run.status === WAITING_CLARIFICATION`, `retrieveToken().status`, puis `completeToken` — **elle ne commite pas** les réponses (c'est le moteur qui reprend et commite). **Démo cloud suspend→answer→resume à faire à la clôture de V3** (V2+V3 ensemble).
+- **V3 (routes API)** `211295d` : `POST /api/ai/run`, route de token public scopé au run, `POST /api/ai/run/answers` (ordre imposé ; 400/401/403/404/409/410/500 ; **410 expiré ≠ 409 déjà consommé**). La route **ne commite jamais** — elle complète le waitpoint et le moteur repris fait le commit canonique unique (double commit structurellement impossible : la route n'a pas accès au store). Helpers purs déplacés dans `lib/orchestrator/clarification.ts`.
+- **Robustesse moteur** `8ee01c2` — trouvée par le 1ᵉʳ run live : une exception d'invocation d'agent (erreur API LLM) est retentée une fois puis **bloque sa section** au lieu d'avorter tout le run ; un échec de batch dégrade en exécution par étape.
+- **Démo cloud V2+V3 : ✅ VERTE** (chemin contrôlé, indépendant de l'analyst) — suspension sur waitpoint réel (`status=WAITING`, **aucun compute facturé**), réponse via `wait.completeToken` (l'appel de la route étape 10), reprise `RESUMING → COMPLETED`, **commit unique vérifié en mémoire (1/1)**. *Nuance* : `completeToken` brut est idempotent → la consommation unique est portée par la **route** (409 sur `retrieveToken().status === COMPLETED`, testé unitairement). **151 tests.**
+- **Prochaine étape : V4 — onglet Pipeline** (lancement + stepper de phases + questions de clarification), puis V5 Mémoire, V6 temps réel, V7 vérif, V8 prompts réels, V9 clôture.
+- ⚠️ **Bloquant pour la démo full-pipeline (→ V8)** : `deepseek-v4-pro` échoue sur la grosse enveloppe structurée de l'analyst (`AI_APICallError`). À trancher en V8 : garder Gemini pour les agents business, réduire l'enveloppe, ou découper l'analyst.
 
 ## Session précédente (socle LIVE validé, Phase 3 débloquée)
 
