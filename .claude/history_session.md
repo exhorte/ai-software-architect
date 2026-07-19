@@ -66,9 +66,23 @@ Méthode imposée par l'utilisateur : compréhension → analyse d'impact → TD
 
 ### Clôture V3 (2026-07-19)
 
-- **Démo exécutée et verte** (détails ci-dessus). Run réel `run_cmrp915fbp41h0vok44ymfl2s`.
-- **Nettoyage fait** : `trigger/_demo_waitpoint.ts` et `scripts/_run-demo.ts` supprimés ; redéploiement Trigger propre (retour à 4 tâches). 151 tests toujours verts, typage propre.
+- **Démo exécutée et verte** (détails ci-dessus). Run réel `run_cmrp915fbp41h0vok44ymfl2s`, waitpoint `waitpoint_cmrp91cahp3220jokbwczecgo`.
+- **Nettoyage fait** : `trigger/_demo_waitpoint.ts` et `scripts/_run-demo.ts` supprimés ; **redéploiement Trigger propre `20260719.1`, 4 tâches** (plus de `demo-waitpoint`). 151 tests toujours verts, typage propre.
 - **Documentation synchronisée** : `phase-03-business-team.md` (change log V3 + robustesse + démo), `project_state.md` (décisions + dette), `handoff.md` (prochaine étape V4).
+- **Commit de clôture** `32e02c1` — poussé sur `origin/main`. Historique des commits Phase 3 : `d0b7aec` (V1) → `baf604c` (V2) → `211295d` (V3) → `8ee01c2` (robustesse) → `32e02c1` (clôture).
+- **Écueils rencontrés et résolus au passage** :
+  - CLI Trigger à **épingler sur la version du SDK** (`npx trigger.dev@4.5.3`) — `@latest` avorte avec « Version mismatch … in CI » quand il n'y a pas de TTY.
+  - Cold start Trigger > 2 min après un déploiement : le 1ᵉʳ essai de démo a échoué sur une **course de nettoyage** (le script supprimait le projet avant que la tâche ne démarre). Driver rendu patient (8 min) + nettoyage uniquement en fin.
+  - Indisponibilités ponctuelles du classifieur de sécurité et erreurs transitoires (`ENOMEM`, `spawn UNKNOWN`) → simples reprises.
+
+### Point de décision en cours (fin de session)
+
+V1-V3 étant actés, deux ordres possibles :
+
+- **V4 d'abord** (recommandé) — onglet Pipeline : lancement + stepper de phases + questions de clarification. Indépendant du blocage LLM ; une fois livré, la démo full-pipeline pourra être pilotée depuis le navigateur dès que V8 fiabilisera l'analyst. Premier pas imposé par le cahier des charges : **croquis UX à faire valider avant tout code**.
+- **V8 d'abord** — traiter le blocage DeepSeek/analyst pour débloquer la démo full-pipeline, puis revenir à l'UI.
+
+*En attente du feu vert de l'utilisateur ; V4 n'est pas démarré.*
 
 ### État actuel
 
