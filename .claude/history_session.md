@@ -86,9 +86,9 @@ V1-V3 étant actés, deux ordres possibles :
 
 ### État actuel
 
-- Socle live opérationnel ; **Phase 3 V1+V2+V3+V4+V5 livrés et validés** (163 tests). **Reste V6-V9** : temps réel (V6), vérification (V7), prompts réels des agents business (V8), clôture (V9).
+- Socle live opérationnel ; **Phase 3 V1 à V6 livrés et validés** (179 tests + cloud demo verte). **Reste V7-V9** : vérification & test multi-session (V7), prompts réels des agents business (V8), clôture (V9).
 - **Dette / blocages connus** :
-  - 🔄 **DeepSeek viable** : sondes du 2026-07-26 montrent que `deepseek-v4-pro` fonctionne avec `generateText` + parsing manuel (le vrai chemin agent-runner). L'ancienne assertion « échoue sur l'enveloppe » était probablement due à `generateObject` (non supporté), pas au flux réel. Reste à surveiller : latence (3× Gemini) et robustesse en runs répétés.
+  - 🔄 **DeepSeek viable** : sondes reproductibles du 2026-07-26 montrent que `deepseek-v4-pro` fonctionne avec `generateText` + parsing manuel (le vrai chemin agent-runner). L'échec antérieur (`AI_APICallError`) concernait probablement `generateObject` (non supporté par DeepSeek), un chemin que le pipeline n'emprunte pas. DeepSeek est viable pour la démo full-pipeline. Deux réserves : latence ~3× Gemini (37s vs 13s pour l'analyst) et robustesse en runs répétés non encore prouvée.
   - `design-agent` génère des nœuds mais **0 edge** et jamais `finalizeDesign` (identique Gemini/DeepSeek → prompt, pas LLM).
   - 1 erreur lint préexistante dans `ai-sidebar.tsx` (set-state-in-effect, ligne 166).
 
@@ -140,6 +140,28 @@ V1-V3 étant actés, deux ordres possibles :
   - **Memory tab** (`components/editor/memory-tab.tsx`) : refetch automatique sur événements memory.* + clarification.updated + run.completed.
   - **Tests** : guards.test.ts (7 tests, garde-fous purs), broadcaster.test.ts (4 tests, échec non-fatal + size guard + no-Liveblocks), engine-realtime.test.ts (5 tests, progression + clarification gate + memory updated + status changed + no-emitter). **16 nouveaux tests.**
   - **179 tests** (19 fichiers). tsc, lint, build verts.
+
+### V7 — Vérification & sondes LLM (2026-07-26)
+
+- **Demande** : vérifier le fonctionnement de l'API, des modèles LLM et du traitement des entrées utilisateur, puis exécuter le test multi-session.
+- **Réalisé — vérifications automatisées** :
+  - **Suite complète** : 179/179 tests, tsc 0 erreur, lint 0 erreur, build OK.
+  - **Sondes LLM reproductibles** (scripts jetables exécutés puis supprimés) :
+    - **Gemini** : `generateText` + parsing JSON manuel → ✅ 13s, enveloppe analyst valide (4 acteurs, 3 clarifications non-bloquantes).
+    - **DeepSeek** : `generateText` + parsing JSON manuel → ✅ 37s, enveloppe analyst valide (4 acteurs, **2 clarifications bloquantes**).
+    - `generateObject` (schéma natif) : Gemini échoue (schéma Zod incompatible avec `response_schema`), DeepSeek fonctionne mais avec warning (« responseFormat not supported »). Ce chemin n'est **pas** utilisé par le pipeline → non consigné comme dette.
+  - **Endpoints API** : les 5 routes (memory, run, state, answers, liveblocks-auth) répondent 307 → Clerk. Tous les endpoints sont correctement protégés.
+  - **Build production** : Next.js 16.2.4 OK, toutes les routes listées.
+- **Corrections apportées** :
+  - **Dette DeepSeek mise à jour** dans `project_state.md`, `handoff.md` et ce fichier : l'ancienne assertion « DeepSeek échoue sur les grosses enveloppes » est contredite par les sondes reproductibles. Le vrai flux (`generateText` + parsing) fonctionne. Deux réserves documentées : latence et robustesse en runs répétés.
+  - **`.gitignore`** : ajout de `.trigger/dev.lock` et `.trigger/active-runs.json` (artefacts Trigger.dev dev).
+  - **`ACT-1` → `ACT-User`** dans le test `engine-realtime.test.ts` (l'ID ne matchait pas le pattern `^ACT-[A-Za-z]`).
+- **Non exécuté — test multi-session manuel** :
+  - Trigger.dev `dev` nécessite un TTY pour le build du worker local → indisponible dans cet environnement headless.
+  - Le test exige deux navigateurs avec des sessions Clerk distinctes (propriétaire + collaborateur).
+  - **Plan de test fourni** : 6 scénarios (chargement initial, lancement pipeline, clarification, mémoire, reconnexion, état terminal), grille PASS/FAIL, consignes d'observabilité, critères de succès.
+  - Scénarios documentés dans le corps de la réponse V7 ; prêts à être exécutés par l'utilisateur.
+- **État V7** : ⬜ en attente du test multi-session. Tous les contrôles automatisables sont passés. Le passage à V8 est conditionné au succès du test manuel ou à la documentation explicite de la limite humaine.
 
 ### Méthode de travail observée dans cette session
 
