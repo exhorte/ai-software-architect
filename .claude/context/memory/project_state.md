@@ -25,7 +25,8 @@ Built on the Ghost AI foundation (Next.js 16, Clerk, Prisma/PostgreSQL, Livebloc
   - **Engine robustness** ✅ `8ee01c2` — LLM API error blocks its section, never aborts the run; batch failure degrades to per-step.
   - **V2+V3 cloud demo** ✅ GREEN — real waitpoint suspend→answer→resume, single commit verified.
   - **V4 (Pipeline UI tab)** ✅ `2026-07-25` — `components/editor/pipeline-tab.tsx` (launch form, phase stepper, clarification Q&A, live tracking via useRealtimeRun); `GET /api/ai/run/state` endpoint; `ClarificationRunState.questions` enriched with full question text. Integrated as 4th tab in ai-sidebar. **157 tests.**
-  - **Remaining: V5 (Memory viewer), V6 (realtime), V7 (verification), V8 (real business prompts/model finalization), V9 (closeout).**
+  - **V5 (Memory viewer tab)** ✅ `2026-07-26` — `GET /api/projects/[projectId]/memory` endpoint (auth → MemoryStore+PrismaPersistence → business sections + statuses); `components/editor/memory-tab.tsx` (expandable section cards with status badges, refresh, empty/loading/error states). Integrated as 5th "Memory" tab in ai-sidebar. **163 tests.**
+  - **Remaining: V6 (realtime broadcast), V7 (verification), V8 (real business prompts/model finalization), V9 (closeout).**
 
 ## Transformation Roadmap
 

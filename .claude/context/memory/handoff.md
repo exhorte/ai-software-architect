@@ -15,19 +15,14 @@
 - **V3 (routes API)** `211295d` : `POST /api/ai/run`, token route, `POST /api/ai/run/answers`.
 - **Robustesse moteur** `8ee01c2` : erreur LLM → section bloquée, pas le run entier.
 - **Démo cloud V2+V3 : ✅ VERTE** — waitpoint réel, commit unique. **151 tests.**
-- **V4 (onglet Pipeline UI)** — livré le 2026-07-25 :
-  - `ClarificationRunState.questions` enrichi (texte des questions embarqué pour l'UI, pas juste les IDs).
-  - `GET /api/ai/run/state` — endpoint de consultation d'état (phase, plan, questions, blockages).
-  - `components/editor/pipeline-tab.tsx` — nouvel onglet Pipeline dans la sidebar AI :
-    - Formulaire de lancement (idée + bouton Launch).
-    - Stepper de phases (INTAKE → CLARIFICATION → REQUIREMENTS) avec statut live.
-    - Questions de clarification interactives (inputs + Submit Answers).
-    - Résumé Done/Failed avec blockages.
-    - Tracking temps réel via `useRealtimeRun` (Trigger.dev).
-  - Intégré comme 4ᵉ onglet (défaut) dans `ai-sidebar.tsx`.
-  - **157 tests** (6 nouveaux : route state).
+- **V4 (onglet Pipeline UI)** — livré le 2026-07-25, commit `f7bca58`.
+- **V5 (onglet Memory)** — livré le 2026-07-26 :
+  - `GET /api/projects/[projectId]/memory` — endpoint de lecture mémoire (sections business + statuts).
+  - `components/editor/memory-tab.tsx` — cartes de sections expansibles avec badges de statut, refresh, empty/loading/error states.
+  - Intégré comme 5ᵉ onglet "Memory" dans `ai-sidebar.tsx`.
+  - **163 tests** (6 nouveaux : route mémoire).
 
-- **Prochaine étape : V5 — onglet Memory** (visualiseur de sections mémoire avec statuts), puis V6 temps réel, V7 vérif, V8 prompts réels, V9 clôture.
+- **Prochaine étape : V6 — temps réel** (Liveblocks broadcast des màj mémoire + pipeline), puis V7 vérif, V8 prompts réels, V9 clôture.
 - ⚠️ **Bloquant pour la démo full-pipeline (→ V8)** : `deepseek-v4-pro` échoue sur la grosse enveloppe structurée de l'analyst.
 
 ## Session précédente (socle LIVE validé, Phase 3 débloquée)

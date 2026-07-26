@@ -62,3 +62,8 @@ Ship the first *real* value: a user types a project idea in the AI sidebar and r
   - `components/editor/pipeline-tab.tsx` — launch form (idea → `POST /api/ai/run` → runId + token), phase stepper (INTAKE → CLARIFICATION → REQUIREMENTS with live status from `useRealtimeRun`), clarification Q&A cards (submits via `POST /api/ai/run/answers`), terminal summary (DONE/Failed with blockages).
   - Integrated as default "Pipeline" tab in `ai-sidebar.tsx` (alongside Architect, Chat, Specs).
   - **157 tests** (6 new: state route).
+- 2026-07-26 — **V5 (Memory viewer tab)**:
+  - `GET /api/projects/[projectId]/memory` — endpoint de lecture mémoire (auth Clerk → `getAccessibleProject` → `MemoryStore`+`PrismaPersistence` → sections business + statuts). Codes 401/403/404/200.
+  - `components/editor/memory-tab.tsx` — cartes de sections expansibles avec badges de statut (Valid/Draft/Stale/Blocked/Missing) pour les 7 sections Business Team (Project Brief, Actors, Clarifications, Entities, Business Rules, Requirements, User Stories). Sub-composants spécialisés par section (ProjectBrief, ActorsList, ClarificationsList, RequirementsList, UserStoriesList, BusinessRulesList). Refresh manuel, empty/loading/error states.
+  - Intégré comme 5ᵉ onglet "Memory" dans `ai-sidebar.tsx`.
+  - **163 tests** (6 nouveaux : route mémoire).

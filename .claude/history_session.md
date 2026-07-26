@@ -86,11 +86,11 @@ V1-V3 étant actés, deux ordres possibles :
 
 ### État actuel
 
-- Socle live opérationnel ; **Phase 3 V1+V2+V3+V4 livrés et validés** (157 tests + démo cloud verte). **Reste V5-V9** : onglet Mémoire (V5), temps réel (V6), vérification (V7), prompts réels des agents business (V8), clôture (V9).
+- Socle live opérationnel ; **Phase 3 V1+V2+V3+V4+V5 livrés et validés** (163 tests). **Reste V6-V9** : temps réel (V6), vérification (V7), prompts réels des agents business (V8), clôture (V9).
 - **Dette / blocages connus** :
   - `deepseek-v4-pro` échoue sur la grosse enveloppe de l'analyst → la démo *full-pipeline* (idée → question bloquante → réponse → requirements) dépend de **V8**.
   - `design-agent` génère des nœuds mais **0 edge** et jamais `finalizeDesign` (identique Gemini/DeepSeek → prompt, pas LLM).
-  - 4 erreurs lint préexistantes dans `components/editor/canvas/*` et `liveblocks.config.ts`.
+  - 1 erreur lint préexistante dans `ai-sidebar.tsx` (set-state-in-effect, ligne 166).
 
 ### V4 — Onglet Pipeline (2026-07-25)
 
@@ -106,6 +106,24 @@ V1-V3 étant actés, deux ordres possibles :
   - Intégré comme 4ᵉ onglet (défaut `defaultValue="pipeline"`) dans `ai-sidebar.tsx`.
   - **157 tests** (6 nouveaux : route state). tsc, lint, build verts.
 - **Écueils** : règles de lint React strictes (`react-hooks/refs` + `react-hooks/set-state-in-effect`) → refactor du guard de fetch (ref lue dans l'effet, pas pendant le render).
+
+### V5 — Onglet Memory (2026-07-26)
+
+- **Demande** : continuer le projet après analyse du `history_session.md`.
+- **Réalisé** :
+  - `GET /api/projects/[projectId]/memory` — endpoint de lecture mémoire (auth Clerk → accès projet → MemoryStore + PrismaPersistence → sections business + statuts). Codes 401/403/404/200.
+  - `components/editor/memory-tab.tsx` — visualiseur de sections mémoire avec cartes expansibles :
+    - **Project Brief** : nom, description, goals (GOAL-xx), scope IN/OUT, contraintes, assumptions (ASM-xxx)
+    - **Actors** : cartes avec ID, nom, kind (human/system), rôle, description, goals
+    - **Clarifications** : questions répondues (vert) / en attente (ambre), badge "Blocking" si bloquant
+    - **Requirements** : ID, priorité (couleurs), kind, titre, description
+    - **User Stories** : ID, epic, points, scénarios GIVEN/WHEN/THEN
+    - **Business Rules** : ID, énoncé, appliesTo
+    - **Entities** : cartes avec ID, nom, kind, description
+    - Chaque section a un badge de statut : Valid (émeraude), Draft (bleu), Stale (ambre), Blocked (rouge), Missing (gris)
+    - Bouton refresh + empty state + loading state + error state avec retry
+  - Intégré comme 5ᵉ onglet "Memory" dans `ai-sidebar.tsx`.
+  - **163 tests** (6 nouveaux : route mémoire). tsc, lint, build verts.
 
 ### Méthode de travail observée dans cette session
 

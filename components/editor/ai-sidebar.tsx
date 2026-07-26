@@ -26,6 +26,7 @@ import { useRealtimeRun } from "@trigger.dev/react-hooks"
 import { AiStatusFeedMessageSchema, ChatFeedMessageSchema } from "@/types/tasks"
 import { cn } from "@/lib/utils"
 import { PipelineTab } from "./pipeline-tab"
+import { MemoryTab } from "./memory-tab"
 
 const FEED_ID = "ai-status-feed"
 const CHAT_FEED_ID = "ai-chat"
@@ -582,6 +583,12 @@ export function AiSidebar({ isOpen, onClose, roomId, projectId }: AiSidebarProps
           >
             Specs
           </TabsTrigger>
+          <TabsTrigger
+            value="memory"
+            className="rounded-lg px-3 py-1.5 text-xs font-medium data-active:bg-accent-ai data-active:text-white data-active:shadow-none"
+          >
+            Memory
+          </TabsTrigger>
         </TabsList>
 
         {/* Pipeline Tab */}
@@ -855,6 +862,11 @@ export function AiSidebar({ isOpen, onClose, roomId, projectId }: AiSidebarProps
               </ScrollArea>
             )}
           </div>
+        </TabsContent>
+
+        {/* Memory Tab */}
+        <TabsContent value="memory" className="min-h-0 flex-1 overflow-hidden">
+          <MemoryTab projectId={projectId} />
         </TabsContent>
       </Tabs>
     </aside>
