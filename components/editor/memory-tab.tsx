@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useEffect, useRef } from "react"
+import { usePipelineEvents } from "./use-pipeline-events"
 import {
   Loader2, Database, ChevronDown, ChevronRight, RefreshCw,
   CheckCircle2, AlertCircle, Clock, XCircle, MinusCircle,
@@ -460,6 +461,34 @@ export function MemoryTab({ projectId }: MemoryTabProps) {
         setIsLoading(false)
       })
   }, [projectId])
+
+  // ── Realtime memory events ──────────────────────────────────────────────
+
+  const { mountKey: memMountKey } = usePipelineEvents({
+    projectId,
+    onEvent: useCallback(
+      (event: { type: string }) => {
+        // Refetch memory on any memory or clarification event.
+        if (
+          event.type.startsWith("memory.") ||
+          event.type === "clarification.updated" ||
+          event.type === "run.completed"
+        ) {
+          fetchMemory()
+        }
+      },
+      [fetchMemory]
+    ),
+  })
+
+  // Refetch on reconnection.
+  const prevMemKeyRef = useRef(1)
+  useEffect(() => {
+    if (memMountKey.current !== prevMemKeyRef.current) {
+      prevMemKeyRef.current = memMountKey.current
+      fetchMemory()
+    }
+  })
 
   const sectionStatus = memory?.runState?.sectionStatus ?? {}
   const phase = memory?.runState?.phase ?? null

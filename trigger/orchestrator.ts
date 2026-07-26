@@ -15,6 +15,7 @@ import { TriggerClarificationGate } from "./clarification-gate"
 import { buildPlan, classifyIntent } from "@/lib/orchestrator/planner"
 import type { PlanStep } from "@/lib/orchestrator/types"
 import { agentRunner } from "./agent-runner"
+import { LiveblocksRealtimeEmitter } from "@/lib/realtime/broadcaster"
 
 export interface OrchestratorPayload {
   projectId: string
@@ -157,6 +158,8 @@ export const pipelineOrchestrator = task({
         runId: runRow.id,
         recorder,
       }),
+      // Best-effort realtime: a failed broadcast is logged, never fatal.
+      emitter: new LiveblocksRealtimeEmitter(payload.projectId),
     })
 
     return engine.run(payload.projectId, planResult.plan)

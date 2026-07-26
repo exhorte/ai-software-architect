@@ -26,8 +26,19 @@ declare global {
     };
 
     RoomEvent:
-      | { type: "ai-status"; message: string; status: "start" | "thinking" | "complete" | "error" };
+      | { type: "ai-status"; message: string; status: "start" | "thinking" | "complete" | "error" }
+      | { type: "run.started"; projectId: string; runId: string; timestamp: string; sequence: number; phase: string; stepId?: string }
+      | { type: "run.status_changed"; projectId: string; runId: string; timestamp: string; sequence: number; status: string }
+      | { type: "run.step_changed"; projectId: string; runId: string; timestamp: string; sequence: number; phase: string; stepId: string }
+      | { type: "run.waiting_clarification"; projectId: string; runId: string; timestamp: string; sequence: number }
+      | { type: "run.resumed"; projectId: string; runId: string; timestamp: string; sequence: number }
+      | { type: "run.completed"; projectId: string; runId: string; timestamp: string; sequence: number }
+      | { type: "run.failed"; projectId: string; runId: string; timestamp: string; sequence: number }
+      | { type: "memory.section_updated"; projectId: string; runId: string; timestamp: string; sequence: number; section: string; sectionStatus: string; agentId?: string }
+      | { type: "memory.section_status_changed"; projectId: string; runId: string; timestamp: string; sequence: number; section: string; sectionStatus: string }
+      | { type: "clarification.updated"; projectId: string; runId: string; timestamp: string; sequence: number };
 
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     ThreadMetadata: {};
 
     FeedMessageData: {
@@ -41,6 +52,7 @@ declare global {
       timestamp?: string;
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     RoomInfo: {};
   }
 }

@@ -22,6 +22,7 @@ import { checkBusinessConsistency, type ConsistencyFinding } from "./consistency
 import { checkEnvelopeAgainstStep, envelopeWrites, parseEnvelope } from "./envelope"
 import { assemblePrompt } from "./prompt"
 import { AGENT_PHASES, type Plan, type PlanStep, type RunSummary, type StepResult } from "./types"
+import type { RealtimeEmitter, PipelineEventType } from "../realtime/types"
 
 /** Invocation port: Trigger.dev adapter in production, in-process mock in tests. */
 export interface AgentInvoker {
@@ -99,6 +100,8 @@ interface EngineDeps {
   recorder: RunRecorder
   /** Optional: without it, CLARIFICATION cannot pause and questions become assumptions. */
   clarificationGate?: ClarificationGate
+  /** Optional: best-effort realtime emitter for pipeline events. Never fatal. */
+  emitter?: RealtimeEmitter
 }
 
 interface ClarificationItem {
@@ -130,12 +133,33 @@ function invocationError(error: unknown): ValidationError {
  */
 
 export class OrchestrationEngine {
+  private seq = 0
+
   constructor(private readonly deps: EngineDeps) {}
+
+  /** Best-effort: a failed broadcast is logged, never thrown. */
+  private emit(type: PipelineEventType, extra: Record<string, unknown> = {}) {
+    if (!this.deps.emitter) return
+    this.seq++
+    this.deps.emitter
+      .emit({
+        type,
+        projectId: "",
+        runId: "",
+        timestamp: new Date().toISOString(),
+        sequence: this.seq,
+        ...extra,
+      } as Parameters<RealtimeEmitter["emit"]>[0])
+      .catch(() => {})
+  }
 
   async run(projectId: string, plan: Plan): Promise<RunSummary> {
     const { store, recorder } = this.deps
     const stepResults: StepResult[] = []
     const blockages: Array<{ section: string; reason: string }> = []
+
+    // Emit run.started once we enter the engine.
+    this.emit("run.started", { projectId, runId: plan.runId, phase: "INTAKE" })
 
     for (const phase of AGENT_PHASES) {
       const phaseSteps = plan.steps.filter((step) => step.phase === phase)
@@ -150,6 +174,8 @@ export class OrchestrationEngine {
 
       await this.advancePhase(projectId, phase)
       await recorder.update({ phase })
+      this.emit("run.step_changed", { projectId, runId: plan.runId, phase,
+        stepId: phaseSteps[0]?.id ?? phase.toLowerCase() })
 
       const completed = new Set<string>()
       let cursor = 0
@@ -209,6 +235,9 @@ export class OrchestrationEngine {
 
     const status = stepResults.some((r) => r.outcome === "committed") ? "DONE" : "FAILED"
     await recorder.update({ status, blockages })
+    this.emit(status === "DONE" ? "run.completed" : "run.failed", {
+      projectId, runId: plan.runId,
+    })
     return { status, stepResults, blockages }
   }
 
@@ -330,11 +359,21 @@ export class OrchestrationEngine {
       ]
     }
 
+    const writes = envelopeWrites(envelope)
     const result = await store.commitSection(
       projectId,
       { agentId: step.agent, runId, stepId: step.id },
-      envelopeWrites(envelope)
+      writes
     )
+    if (result.ok) {
+      for (const section of Object.keys(writes)) {
+        this.emit("memory.section_updated", {
+          projectId, runId, section,
+          agentId: step.agent,
+          sectionStatus: "draft",
+        })
+      }
+    }
     return result.ok ? [] : (result.errors ?? [])
   }
 
@@ -359,6 +398,7 @@ export class OrchestrationEngine {
 
     if (pendingBlocking.length > 0 && clarificationGate) {
       await recorder.update({ status: "WAITING_CLARIFICATION" })
+      this.emit("run.waiting_clarification", { projectId, runId })
 
       const answers = await clarificationGate.requestAnswers({
         projectId,
@@ -372,6 +412,7 @@ export class OrchestrationEngine {
       })
 
       await recorder.update({ status: "RUNNING" })
+      this.emit("run.resumed", { projectId, runId })
 
       const byId = new Map(answers.filter((a) => a.answer?.trim()).map((a) => [a.id, a.answer]))
       if (byId.size > 0) {
@@ -520,6 +561,11 @@ export class OrchestrationEngine {
     }
     if (Object.keys(updates).length > 0) {
       await this.deps.store.setSectionStatus(projectId, updates)
+      for (const [section, sectionStatus] of Object.entries(updates)) {
+        this.emit("memory.section_status_changed", {
+          projectId, runId: "", section, sectionStatus,
+        })
+      }
     }
   }
 

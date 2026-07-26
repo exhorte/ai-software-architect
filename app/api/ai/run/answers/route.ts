@@ -7,6 +7,7 @@ import {
 } from "@/lib/orchestrator/clarification"
 import type { ClarificationRunState } from "@/lib/orchestrator/engine"
 import { getAccessibleProject, getCurrentProjectIdentity } from "@/lib/project-access"
+import { LiveblocksRealtimeEmitter } from "@/lib/realtime/broadcaster"
 
 /** Cap the raw body so a submission cannot be used to push a huge payload. */
 const MAX_BODY_BYTES = 64 * 1024
@@ -74,6 +75,16 @@ export async function POST(request: Request) {
         { status: result.status }
       )
     }
+    // Best-effort realtime: notify collaborators that clarification was updated.
+    new LiveblocksRealtimeEmitter(run.projectId)
+      .emit({
+        type: "clarification.updated",
+        projectId: run.projectId,
+        runId: run.triggerRunId ?? runId,
+        timestamp: new Date().toISOString(),
+        sequence: 0, // answers route has no sequence counter; client deduplicates by run state
+      })
+      .catch(() => {})
     return Response.json(
       { status: "resuming", answersAccepted: result.answersAccepted },
       { status: 200 }

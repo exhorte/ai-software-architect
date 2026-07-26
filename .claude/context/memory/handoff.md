@@ -16,13 +16,14 @@
 - **Robustesse moteur** `8ee01c2` : erreur LLM → section bloquée, pas le run entier.
 - **Démo cloud V2+V3 : ✅ VERTE** — waitpoint réel, commit unique. **151 tests.**
 - **V4 (onglet Pipeline UI)** — livré le 2026-07-25, commit `f7bca58`.
-- **V5 (onglet Memory)** — livré le 2026-07-26 :
-  - `GET /api/projects/[projectId]/memory` — endpoint de lecture mémoire (sections business + statuts).
-  - `components/editor/memory-tab.tsx` — cartes de sections expansibles avec badges de statut, refresh, empty/loading/error states.
-  - Intégré comme 5ᵉ onglet "Memory" dans `ai-sidebar.tsx`.
-  - **163 tests** (6 nouveaux : route mémoire).
+- **V5 (onglet Memory)** — livré le 2026-07-26.
+- **V6 (temps réel)** — livré le 2026-07-26 :
+  - 10 types d'événements Liveblocks (run.* + memory.* + clarification.*).
+  - `LiveblocksRealtimeEmitter` (serveur best-effort) + guards purs + hook client `usePipelineEvents`.
+  - Engine émet après chaque transition ; Pipeline/Memory tabs refetch automatiquement.
+  - Reconnexion → refetch canonique. 16 nouveaux tests. **179 tests au total.**
 
-- **Prochaine étape : V6 — temps réel** (Liveblocks broadcast des màj mémoire + pipeline), puis V7 vérif, V8 prompts réels, V9 clôture.
+- **Prochaine étape : V7 — vérification** (validation manuelle + multi-session), puis V8 prompts réels, V9 clôture.
 - ⚠️ **Bloquant pour la démo full-pipeline (→ V8)** : `deepseek-v4-pro` échoue sur la grosse enveloppe structurée de l'analyst.
 
 ## Session précédente (socle LIVE validé, Phase 3 débloquée)

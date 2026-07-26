@@ -67,3 +67,10 @@ Ship the first *real* value: a user types a project idea in the AI sidebar and r
   - `components/editor/memory-tab.tsx` — cartes de sections expansibles avec badges de statut (Valid/Draft/Stale/Blocked/Missing) pour les 7 sections Business Team (Project Brief, Actors, Clarifications, Entities, Business Rules, Requirements, User Stories). Sub-composants spécialisés par section (ProjectBrief, ActorsList, ClarificationsList, RequirementsList, UserStoriesList, BusinessRulesList). Refresh manuel, empty/loading/error states.
   - Intégré comme 5ᵉ onglet "Memory" dans `ai-sidebar.tsx`.
   - **163 tests** (6 nouveaux : route mémoire).
+- 2026-07-26 — **V6 (realtime broadcast)**:
+  - 10 nouveaux types d'événements `RoomEvent` dans `liveblocks.config.ts` (run.started, run.status_changed, run.step_changed, run.waiting_clarification, run.resumed, run.completed, run.failed, memory.section_updated, memory.section_status_changed, clarification.updated).
+  - `lib/realtime/` : types + guards purs (validation sans React, testable unitairement) + `LiveblocksRealtimeEmitter` (broadcast best-effort, size guard 1 KB, jamais de throw).
+  - Engine (`lib/orchestrator/engine.ts`) : `emitter?: RealtimeEmitter` dans `EngineDeps`, émission à chaque transition (start, step, waiting, resumed, completed/failed, memory.section_updated, memory.section_status_changed).
+  - Hook client `usePipelineEvents` : 6 garde-fous (room/run/dedup/order/clock skew/no loops), `mountKey` pour reconnexion.
+  - Pipeline tab + Memory tab : refetch automatique sur événements + reconnexion.
+  - **16 nouveaux tests** (guards 7 + broadcaster 4 + engine-realtime 5). **179 tests au total.**

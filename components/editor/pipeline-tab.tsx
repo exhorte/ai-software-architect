@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
+import { usePipelineEvents } from "./use-pipeline-events"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -151,6 +152,55 @@ export function PipelineTab({ projectId }: PipelineTabProps) {
   const isDone = pipelineStatus === "DONE"
   const isFailed = pipelineStatus === "FAILED" || triggerStatus === "FAILED"
   const hasActiveRun = !!(runId && !isTerminal)
+
+  // ── Realtime pipeline events (Liveblocks broadcast) ────────────────────
+
+  const fetchRunState = useCallback(() => {
+    if (!runId) return
+    fetch(`/api/ai/run/state?runId=${encodeURIComponent(runId)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: RunState | null) => {
+        if (data) {
+          setRunState(data)
+          const defaults: Record<string, string> = {}
+          for (const q of data.clarification?.questions ?? []) {
+            if (q.suggestedDefault) defaults[q.id] = q.suggestedDefault
+          }
+          setAnswers((prev) => {
+            // Only fill defaults for empty answers; don't overwrite user input.
+            const next = { ...prev }
+            for (const [k, v] of Object.entries(defaults)) {
+              if (!next[k]) next[k] = v
+            }
+            return next
+          })
+        }
+      })
+      .catch(() => {})
+  }, [runId])
+
+  const { mountKey } = usePipelineEvents({
+    projectId,
+    runId,
+    onEvent: useCallback(
+      (event: { type: string }) => {
+        // On any pipeline event, refetch run state to stay in sync.
+        if (event.type.startsWith("run.") || event.type.startsWith("clarification.")) {
+          fetchRunState()
+        }
+      },
+      [fetchRunState]
+    ),
+  })
+
+  // Refetch on reconnection (mountKey increments on each Liveblocks mount).
+  const prevRunKeyRef = useRef(1)
+  useEffect(() => {
+    if (mountKey.current !== prevRunKeyRef.current) {
+      prevRunKeyRef.current = mountKey.current
+      fetchRunState()
+    }
+  })
 
   // ── Fetch run state when WAITING_CLARIFICATION ──────────────────────────
 

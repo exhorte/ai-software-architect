@@ -125,6 +125,22 @@ V1-V3 étant actés, deux ordres possibles :
   - Intégré comme 5ᵉ onglet "Memory" dans `ai-sidebar.tsx`.
   - **163 tests** (6 nouveaux : route mémoire). tsc, lint, build verts.
 
+### V6 — Temps réel (2026-07-26)
+
+- **Demande** : synchronisation temps réel pipeline + mémoire via Liveblocks, sans refresh manuel.
+- **Réalisé** :
+  - **Types & taxonomy** (`lib/realtime/types.ts`, `liveblocks.config.ts`) : 10 nouveaux types d'événements `RoomEvent` (run.started, run.status_changed, run.step_changed, run.waiting_clarification, run.resumed, run.completed, run.failed, memory.section_updated, memory.section_status_changed, clarification.updated). Payload minimal (projectId, runId, timestamp, sequence), jamais de secrets.
+  - **Broadcaster serveur** (`lib/realtime/broadcaster.ts`) : `LiveblocksRealtimeEmitter` — adapter best-effort, échec = log + continue, jamais de throw. Size guard (1 KB cap).
+  - **Guards purs** (`lib/realtime/guards.ts`) : fonctions de validation testables sans React (room guard, run guard, déduplication, ordre, clock skew).
+  - **Engine modifié** (`lib/orchestrator/engine.ts`) : `emitter` optionnel dans `EngineDeps`, `sequence` counter, émission après chaque transition clé (start, step, waiting, resumed, completed/failed, memory.section_updated, memory.section_status_changed).
+  - **Trigger orchestrator** (`trigger/orchestrator.ts`) : `LiveblocksRealtimeEmitter(projectId)` passé à l'engine.
+  - **Answers route** (`app/api/ai/run/answers/route.ts`) : émission `clarification.updated` après soumission.
+  - **Hook client** (`components/editor/use-pipeline-events.ts`) : écoute `useEventListener`, 6 garde-fous (room/run/dedup/order/timestamp skew/no loops), `mountKey` pour détection reconnexion, cleanup automatique.
+  - **Pipeline tab** (`components/editor/pipeline-tab.tsx`) : refetch automatique sur événements run.*, reconnexion → refetch canonique.
+  - **Memory tab** (`components/editor/memory-tab.tsx`) : refetch automatique sur événements memory.* + clarification.updated + run.completed.
+  - **Tests** : guards.test.ts (7 tests, garde-fous purs), broadcaster.test.ts (4 tests, échec non-fatal + size guard + no-Liveblocks), engine-realtime.test.ts (5 tests, progression + clarification gate + memory updated + status changed + no-emitter). **16 nouveaux tests.**
+  - **179 tests** (19 fichiers). tsc, lint, build verts.
+
 ### Méthode de travail observée dans cette session
 
 L'utilisateur impose un protocole strict à chaque unité : **compréhension → analyse d'impact → TDD → plan → validation explicite → implémentation → vérification (tsc/lint/tests/build) → documentation**. En cas d'échec : s'arrêter au point précis, fournir étape/composant/message/cause/correction minimale **recommandée** (sans l'implémenter sans accord). Secrets : jamais affichés, jamais commités ; vérification systématique avant chaque commit.
