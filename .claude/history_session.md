@@ -88,7 +88,7 @@ V1-V3 étant actés, deux ordres possibles :
 
 - Socle live opérationnel ; **Phase 3 V1+V2+V3+V4+V5 livrés et validés** (163 tests). **Reste V6-V9** : temps réel (V6), vérification (V7), prompts réels des agents business (V8), clôture (V9).
 - **Dette / blocages connus** :
-  - `deepseek-v4-pro` échoue sur la grosse enveloppe de l'analyst → la démo *full-pipeline* (idée → question bloquante → réponse → requirements) dépend de **V8**.
+  - 🔄 **DeepSeek viable** : sondes du 2026-07-26 montrent que `deepseek-v4-pro` fonctionne avec `generateText` + parsing manuel (le vrai chemin agent-runner). L'ancienne assertion « échoue sur l'enveloppe » était probablement due à `generateObject` (non supporté), pas au flux réel. Reste à surveiller : latence (3× Gemini) et robustesse en runs répétés.
   - `design-agent` génère des nœuds mais **0 edge** et jamais `finalizeDesign` (identique Gemini/DeepSeek → prompt, pas LLM).
   - 1 erreur lint préexistante dans `ai-sidebar.tsx` (set-state-in-effect, ligne 166).
 

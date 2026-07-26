@@ -24,7 +24,7 @@
   - Reconnexion → refetch canonique. 16 nouveaux tests. **179 tests au total.**
 
 - **Prochaine étape : V7 — vérification** (validation manuelle + multi-session), puis V8 prompts réels, V9 clôture.
-- ⚠️ **Bloquant pour la démo full-pipeline (→ V8)** : `deepseek-v4-pro` échoue sur la grosse enveloppe structurée de l'analyst.
+- 🔄 **DeepSeek viable pour le pipeline** : les sondes du 2026-07-26 confirment que `deepseek-v4-pro` produit des enveloppes JSON valides via `generateText` + parsing manuel (le chemin réel de l'agent-runner). Latence ~3× Gemini (37s vs 13s), mais fonctionnel. La dette précédente (« échoue sur l'enveloppe ») est infirmée.
 
 ## Session précédente (socle LIVE validé, Phase 3 débloquée)
 
