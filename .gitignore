@@ -48,3 +48,5 @@ next-env.d.ts
 # trigger.dev
 .trigger/tmp/
 .trigger/watchdog.pid
+.trigger/dev.lock
+.trigger/active-runs.json
