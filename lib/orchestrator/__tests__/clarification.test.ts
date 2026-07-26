@@ -59,6 +59,10 @@ describe("submitClarificationAnswers", () => {
   const waiting: ClarificationRunState = {
     tokenId: "waitpoint_1",
     questionIds: ["CLR-001", "CLR-002"],
+    questions: [
+      { id: "CLR-001", question: "What is the primary goal?", why: "scope" },
+      { id: "CLR-002", question: "Who are the users?", why: "actors" },
+    ],
     questionCount: 2,
     expiresAt: "2026-07-18T12:00:00.000Z",
     suspendedAt: "2026-07-17T12:00:00.000Z",

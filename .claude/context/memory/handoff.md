@@ -8,15 +8,27 @@
 
 ---
 
-## Session en cours (2026-07-17) — Phase 3 : V1+V2+V3 faits, démo cloud verte
+## Session en cours (2026-07-25) — Phase 3 : V1+V2+V3+V4 faits
 
-- **V1 (moteur)** `d0b7aec` : port `ClarificationGate`, boucle de clarification 1 tour (non-répondu → hypothèses), `consistency.ts` (CON-01/02) + gate correctif (re-run de l'agent propriétaire, groupé par agent), `preserveStatus` sur `commitSection`.
-- **V2 (adaptateur waitpoint)** : pause/reprise = **waitpoint tokens Trigger.dev v4** (`createToken`/`forToken`/`completeToken`/`retrieveToken`, vérifiés sur SDK 4.5.3 installé). `trigger/clarification-gate.ts` implémente le port, **zéro logique métier** ; le moteur reste sans dépendance Trigger (mock V1 toujours utilisé). Statut **`RESUMING`** ajouté ; `Run.stepId` + `Run.clarification` (migration `20260717120633`). Idempotence = 1 token/run (`clarification:<runId>`, `isCached` au rejeu). Expiration **24 h** = « personne n'a répondu → hypothèses » ; toute autre erreur waitpoint est technique et relancée (jamais convertie en hypothèse). 126 tests.
-- **V3 (routes API)** `211295d` : `POST /api/ai/run`, route de token public scopé au run, `POST /api/ai/run/answers` (ordre imposé ; 400/401/403/404/409/410/500 ; **410 expiré ≠ 409 déjà consommé**). La route **ne commite jamais** — elle complète le waitpoint et le moteur repris fait le commit canonique unique (double commit structurellement impossible : la route n'a pas accès au store). Helpers purs déplacés dans `lib/orchestrator/clarification.ts`.
-- **Robustesse moteur** `8ee01c2` — trouvée par le 1ᵉʳ run live : une exception d'invocation d'agent (erreur API LLM) est retentée une fois puis **bloque sa section** au lieu d'avorter tout le run ; un échec de batch dégrade en exécution par étape.
-- **Démo cloud V2+V3 : ✅ VERTE** (chemin contrôlé, indépendant de l'analyst) — suspension sur waitpoint réel (`status=WAITING`, **aucun compute facturé**), réponse via `wait.completeToken` (l'appel de la route étape 10), reprise `RESUMING → COMPLETED`, **commit unique vérifié en mémoire (1/1)**. *Nuance* : `completeToken` brut est idempotent → la consommation unique est portée par la **route** (409 sur `retrieveToken().status === COMPLETED`, testé unitairement). **151 tests.**
-- **Prochaine étape : V4 — onglet Pipeline** (lancement + stepper de phases + questions de clarification), puis V5 Mémoire, V6 temps réel, V7 vérif, V8 prompts réels, V9 clôture.
-- ⚠️ **Bloquant pour la démo full-pipeline (→ V8)** : `deepseek-v4-pro` échoue sur la grosse enveloppe structurée de l'analyst (`AI_APICallError`). À trancher en V8 : garder Gemini pour les agents business, réduire l'enveloppe, ou découper l'analyst.
+- **V1 (moteur)** `d0b7aec` : port `ClarificationGate`, boucle de clarification 1 tour, `consistency.ts`, `preserveStatus`.
+- **V2 (adaptateur waitpoint)** `baf604c` : Trigger.dev v4 waitpoint tokens, `RESUMING`, `Run.clarification`.
+- **V3 (routes API)** `211295d` : `POST /api/ai/run`, token route, `POST /api/ai/run/answers`.
+- **Robustesse moteur** `8ee01c2` : erreur LLM → section bloquée, pas le run entier.
+- **Démo cloud V2+V3 : ✅ VERTE** — waitpoint réel, commit unique. **151 tests.**
+- **V4 (onglet Pipeline UI)** — livré le 2026-07-25 :
+  - `ClarificationRunState.questions` enrichi (texte des questions embarqué pour l'UI, pas juste les IDs).
+  - `GET /api/ai/run/state` — endpoint de consultation d'état (phase, plan, questions, blockages).
+  - `components/editor/pipeline-tab.tsx` — nouvel onglet Pipeline dans la sidebar AI :
+    - Formulaire de lancement (idée + bouton Launch).
+    - Stepper de phases (INTAKE → CLARIFICATION → REQUIREMENTS) avec statut live.
+    - Questions de clarification interactives (inputs + Submit Answers).
+    - Résumé Done/Failed avec blockages.
+    - Tracking temps réel via `useRealtimeRun` (Trigger.dev).
+  - Intégré comme 4ᵉ onglet (défaut) dans `ai-sidebar.tsx`.
+  - **157 tests** (6 nouveaux : route state).
+
+- **Prochaine étape : V5 — onglet Memory** (visualiseur de sections mémoire avec statuts), puis V6 temps réel, V7 vérif, V8 prompts réels, V9 clôture.
+- ⚠️ **Bloquant pour la démo full-pipeline (→ V8)** : `deepseek-v4-pro` échoue sur la grosse enveloppe structurée de l'analyst.
 
 ## Session précédente (socle LIVE validé, Phase 3 débloquée)
 

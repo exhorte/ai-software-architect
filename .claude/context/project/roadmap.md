@@ -14,12 +14,12 @@
 | 0 | Brain & foundations | (done in place — see `../memory/project_state.md` § Decisions Log) | ✅ done (2026-07-05) | — |
 | 1 | Shared Memory runtime | `phases/phase-01-shared-memory.md` | ✅ done (2026-07-06) | 0 |
 | 2 | Orchestrator runtime | `phases/phase-02-orchestrator.md` | ✅ done (2026-07-06) | 1 |
-| 3 | Business Team end-to-end | `phases/phase-03-business-team.md` | ⬜ not started | 2 |
+| 3 | Business Team end-to-end | `phases/phase-03-business-team.md` | 🔶 in progress (V1-V3 done, V4-V9 remaining) | 2 |
 | 4 | Architecture Team + canvas projection | `phases/phase-04-architecture-team.md` | ⬜ not started | 3 |
 | 5 | Engineering & Documentation Teams + export | `phases/phase-05-engineering-team.md` | ⬜ not started | 4 |
 | 6 | Advanced platform (multi-LLM, new workflows) | `phases/phase-06-advanced-platform.md` | ⬜ not started | 5 |
 
-**Current phase: 3 — Business Team end-to-end.** Unblocked 2026-07-17: the inherited base is verified live end to end (Clerk → Prisma → Liveblocks → Trigger.dev prod → LLM → Blob), on both Gemini and DeepSeek.
+**Current phase: 3 — Business Team end-to-end.** 🔶 V1+V2+V3 delivered and validated (engine clarification gate, waitpoint adapter, API routes, engine robustness — 151 tests, cloud demo green). Remaining: V4 (Pipeline UI tab), V5 (Memory viewer), V6 (realtime), V7 (verification), V8 (real business prompts/model finalization), V9 (closeout).
 
 ## Phase Discipline
 

@@ -96,6 +96,7 @@ export class TriggerClarificationGate implements ClarificationGate {
     const state: ClarificationRunState = {
       tokenId: token.id,
       questionIds: request.questions.map((q) => q.id),
+      questions: request.questions,
       questionCount: request.questions.length,
       expiresAt: new Date(suspendedAt.getTime() + parseDuration(this.timeout)).toISOString(),
       suspendedAt: suspendedAt.toISOString(),

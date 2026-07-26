@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react"
 import ReactMarkdown from "react-markdown"
-import { Bot, X, Send, FileText, Download, Loader2, MessageSquare } from "lucide-react"
+import { Bot, X, Send, FileText, Download, Loader2, MessageSquare, Play } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -25,6 +25,7 @@ import {
 import { useRealtimeRun } from "@trigger.dev/react-hooks"
 import { AiStatusFeedMessageSchema, ChatFeedMessageSchema } from "@/types/tasks"
 import { cn } from "@/lib/utils"
+import { PipelineTab } from "./pipeline-tab"
 
 const FEED_ID = "ai-status-feed"
 const CHAT_FEED_ID = "ai-chat"
@@ -555,8 +556,14 @@ export function AiSidebar({ isOpen, onClose, roomId, projectId }: AiSidebarProps
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="architect" className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <Tabs defaultValue="pipeline" className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <TabsList className="mx-4 mt-3 h-auto shrink-0 rounded-xl bg-bg-subtle p-1">
+          <TabsTrigger
+            value="pipeline"
+            className="rounded-lg px-3 py-1.5 text-xs font-medium data-active:bg-accent-ai data-active:text-white data-active:shadow-none"
+          >
+            Pipeline
+          </TabsTrigger>
           <TabsTrigger
             value="architect"
             className="rounded-lg px-3 py-1.5 text-xs font-medium data-active:bg-accent-ai data-active:text-white data-active:shadow-none"
@@ -576,6 +583,11 @@ export function AiSidebar({ isOpen, onClose, roomId, projectId }: AiSidebarProps
             Specs
           </TabsTrigger>
         </TabsList>
+
+        {/* Pipeline Tab */}
+        <TabsContent value="pipeline" className="min-h-0 flex-1 overflow-hidden">
+          <PipelineTab projectId={projectId} roomId={roomId} />
+        </TabsContent>
 
         {/* AI Architect Tab */}
         <TabsContent value="architect" className="min-h-0 flex-1 overflow-hidden">

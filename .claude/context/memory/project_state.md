@@ -15,10 +15,17 @@ Built on the Ghost AI foundation (Next.js 16, Clerk, Prisma/PostgreSQL, Livebloc
 
 ## Current Phase
 
-- **Phase 0 — Foundations of the agent system**: ✅ complete (2026-07-05). Brain in place, entry points rewritten, legacy artifacts cleaned up (user-approved), git history started (`4a0365d` snapshot → `17ef040` cleanup). Application code unchanged.
-- **Phase 1 — Shared Memory runtime**: ✅ complete (2026-07-06). `lib/memory/` ships the validated, versioned memory layer (33 tests); `ProjectMemory`/`MemoryRevision` models are included in the fresh `init` migration now applied to Prisma Postgres.
-- **Phase 2 — Orchestrator runtime**: ✅ complete (2026-07-06). `lib/orchestrator/` ships the engine (state machine, planner, envelope, 4-layer prompts, LLM seam) behind ports; `trigger/orchestrator.ts` + `trigger/agent-runner.ts` wrap it; `Run` model + offline migration. 60/60 tests. Deferred: live Trigger.dev smoke test (needs env).
-- **Phase 3 — Business Team end-to-end**: not started (current — spec: `../project/phases/phase-03-business-team.md`).
+- **Phase 0 — Foundations of the agent system**: ✅ complete (2026-07-05).
+- **Phase 1 — Shared Memory runtime**: ✅ complete (2026-07-06).
+- **Phase 2 — Orchestrator runtime**: ✅ complete (2026-07-06).
+- **Phase 3 — Business Team end-to-end**: 🔶 in progress (spec: `../project/phases/phase-03-business-team.md`).
+  - **V1 (engine)** ✅ `d0b7aec` — ClarificationGate port, clarification loop, consistency.ts (CON-01/02), preserveStatus.
+  - **V2 (waitpoint adapter)** ✅ `baf604c` — Trigger.dev v4 waitpoint tokens, zero business logic in trigger layer, `RESUMING` status, Run.clarification.
+  - **V3 (API routes)** ✅ `211295d` — `POST /api/ai/run`, run public-token route, `POST /api/ai/run/answers` (400/401/403/404/409/410/500).
+  - **Engine robustness** ✅ `8ee01c2` — LLM API error blocks its section, never aborts the run; batch failure degrades to per-step.
+  - **V2+V3 cloud demo** ✅ GREEN — real waitpoint suspend→answer→resume, single commit verified.
+  - **V4 (Pipeline UI tab)** ✅ `2026-07-25` — `components/editor/pipeline-tab.tsx` (launch form, phase stepper, clarification Q&A, live tracking via useRealtimeRun); `GET /api/ai/run/state` endpoint; `ClarificationRunState.questions` enriched with full question text. Integrated as 4th tab in ai-sidebar. **157 tests.**
+  - **Remaining: V5 (Memory viewer), V6 (realtime), V7 (verification), V8 (real business prompts/model finalization), V9 (closeout).**
 
 ## Transformation Roadmap
 

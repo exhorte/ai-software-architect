@@ -74,6 +74,8 @@ export interface ClarificationRunState {
   tokenId: string
   /** Ids of the questions actually asked; their text lives in Shared Memory. */
   questionIds: string[]
+  /** UI convenience: the questions as asked (so the Pipeline tab doesn't need a memory round-trip). */
+  questions: ClarificationQuestion[]
   questionCount: number
   expiresAt: string
   suspendedAt: string

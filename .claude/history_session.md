@@ -86,11 +86,26 @@ V1-V3 étant actés, deux ordres possibles :
 
 ### État actuel
 
-- Socle live opérationnel ; **Phase 3 V1+V2+V3 livrés et validés** (151 tests + démo cloud verte). **Reste V4-V9** : onglet Pipeline (V4), onglet Mémoire (V5), temps réel (V6), vérification (V7), prompts réels des agents business (V8), clôture (V9).
+- Socle live opérationnel ; **Phase 3 V1+V2+V3+V4 livrés et validés** (157 tests + démo cloud verte). **Reste V5-V9** : onglet Mémoire (V5), temps réel (V6), vérification (V7), prompts réels des agents business (V8), clôture (V9).
 - **Dette / blocages connus** :
   - `deepseek-v4-pro` échoue sur la grosse enveloppe de l'analyst → la démo *full-pipeline* (idée → question bloquante → réponse → requirements) dépend de **V8**.
   - `design-agent` génère des nœuds mais **0 edge** et jamais `finalizeDesign` (identique Gemini/DeepSeek → prompt, pas LLM).
   - 4 erreurs lint préexistantes dans `components/editor/canvas/*` et `liveblocks.config.ts`.
+
+### V4 — Onglet Pipeline (2026-07-25)
+
+- **Demande** : onglet Pipeline dans la sidebar AI (mode auto-approve).
+- **Réalisé** :
+  - `ClarificationRunState.questions` enrichi avec le texte complet des questions (plus juste les IDs) — duplication pragmatique pour éviter un round-trip mémoire dans l'UI.
+  - `GET /api/ai/run/state?runId=<triggerRunId>` — nouvel endpoint de consultation : phase, step, status, plan (stepper), questions de clarification, blockages. Auth/accès identiques au endpoint answers.
+  - `components/editor/pipeline-tab.tsx` — composant autonome :
+    - **Idle** : formulaire de lancement (textarea + bouton Launch + chips d'idées)
+    - **Running** : stepper de phases (INTAKE → CLARIFICATION → REQUIREMENTS) avec badges de statut et icônes de progression, tracking temps réel via `useRealtimeRun`
+    - **WAITING_CLARIFICATION** : cartes de questions interactives (inputs pré-remplis avec `suggestedDefault`), bouton Submit Answers → `POST /api/ai/run/answers`
+    - **Terminal** : résumé DONE (succès) ou FAILED (avec blockages détaillés), bouton New Pipeline Run
+  - Intégré comme 4ᵉ onglet (défaut `defaultValue="pipeline"`) dans `ai-sidebar.tsx`.
+  - **157 tests** (6 nouveaux : route state). tsc, lint, build verts.
+- **Écueils** : règles de lint React strictes (`react-hooks/refs` + `react-hooks/set-state-in-effect`) → refactor du guard de fetch (ref lue dans l'effet, pas pendant le render).
 
 ### Méthode de travail observée dans cette session
 

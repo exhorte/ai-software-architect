@@ -102,6 +102,7 @@ describe("TriggerClarificationGate", () => {
     expect(waiting?.clarification).toMatchObject({
       tokenId: "waitpoint_123",
       questionIds: ["CLR-001", "CLR-002"],
+      questions: QUESTIONS,
       questionCount: 2,
       suspendedAt: "2026-07-17T12:00:00.000Z",
       expiresAt: "2026-07-18T12:00:00.000Z", // suspendedAt + 24h
